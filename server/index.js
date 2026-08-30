@@ -15,6 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'GU_CAMPUS_BRIDGE_SECRET_KEY_2026';
 // Auto-initialize SQLite database schema and default records on boot
 try {
   console.log('Ensuring database schema and seeds are initialized...');
+  execSync('npx prisma generate', { stdio: 'inherit' });
   execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
   execSync('node prisma/seed.js', { stdio: 'inherit' });
 } catch (e) {
