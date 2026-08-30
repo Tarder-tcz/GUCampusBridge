@@ -13,6 +13,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'GU_CAMPUS_BRIDGE_SECRET_KEY_2026';
 app.use(cors());
 app.use(express.json());
 
+// Root Health & API Info Endpoint
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    message: '🚀 GUCampusBridge REST API Server is running!',
+    endpoints: {
+      posts: '/api/posts',
+      channels: '/api/channels',
+      tags: '/api/tags',
+      events: '/api/events',
+      auth: '/api/auth/me'
+    }
+  });
+});
+
 // Auth Token Verification Middleware
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
