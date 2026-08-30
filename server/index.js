@@ -4,11 +4,22 @@ import pkg from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
+import { execSync } from 'child_process';
+
 const { PrismaClient } = pkg;
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'GU_CAMPUS_BRIDGE_SECRET_KEY_2026';
+
+// Auto-initialize SQLite database schema and default records on boot
+try {
+  console.log('Ensuring database schema and seeds are initialized...');
+  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
+  execSync('node prisma/seed.js', { stdio: 'inherit' });
+} catch (e) {
+  console.warn('Database startup check notice:', e.message);
+}
 
 app.use(cors());
 app.use(express.json());
