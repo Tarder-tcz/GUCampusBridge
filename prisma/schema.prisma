@@ -1,0 +1,96 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+  name              String
+  handle            String    @unique
+  avatar            String
+  role              String
+  badge             String
+  department        String    @default("School of Computer Science & Engineering")
+  bio               String    @default("B.Tech Student @ Galgotias University")
+  karma             Int       @default(100)
+  upvotedPostIds    String    @default("[]")
+  downvotedPostIds  String    @default("[]")
+  upvotedCommentIds String    @default("[]")
+  savedPostIds      String    @default("[]")
+  posts             Post[]
+  comments          Comment[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Channel {
+  id    String @id
+  name  String
+  label String
+  icon  String
+  count Int    @default(0)
+  posts Post[]
+}
+
+model Tag {
+  id   String @id
+  name String
+}
+
+model Post {
+  id              String    @id @default(uuid())
+  channelId       String
+  channel         Channel   @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  channelName     String
+  title           String
+  content         String
+  authorId        String?
+  author          User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName      String
+  authorHandle    String
+  authorRole      String
+  authorBadge     String
+  authorAvatar    String
+  createdAt       String
+  votes           Int       @default(0)
+  commentCount    Int       @default(0)
+  views           Int       @default(0)
+  tags            String    @default("[]")
+  isSolved        Boolean   @default(false)
+  solvedCommentId String?
+  isPinned        Boolean   @default(false)
+  comments        Comment[]
+}
+
+model Comment {
+  id           String    @id @default(uuid())
+  postId       String
+  post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId     String?
+  parent       Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      Comment[] @relation("CommentReplies")
+  authorId     String?
+  author       User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName   String
+  authorHandle String
+  authorRole   String
+  authorBadge  String
+  authorAvatar String
+  content      String
+  createdAt    String
+  votes        Int       @default(0)
+  isSolution   Boolean   @default(false)
+}
+
+model Event {
+  id    String @id @default(uuid())
+  title String
+  date  String
+  tag   String
+}
