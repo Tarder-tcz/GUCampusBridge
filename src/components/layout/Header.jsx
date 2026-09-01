@@ -27,6 +27,7 @@ export const Header = () => {
     logout,
     notifications,
     userState,
+    token,
     viewMode,
     setViewMode,
     sortBy,
