@@ -182,29 +182,78 @@ export const Header = () => {
             )}
           </button>
 
-          {/* User Profile Avatar Dropdown Menu */}
-          <div className="relative pl-1 border-l border-slate-800" ref={profileMenuRef}>
-            <button
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-800/60 transition-all text-left focus:outline-none focus:ring-2 focus:ring-slate-700/50"
-              aria-expanded={isProfileMenuOpen}
-              aria-haspopup="true"
-            >
-              <img
-                src={userState.avatar}
-                alt={userState.name}
-                className="w-9 h-9 rounded-xl object-cover border border-slate-700 shadow-sm"
-              />
-              <div className="hidden xl:block text-left text-xs">
-                <div className="font-semibold text-slate-200 flex items-center gap-1">
-                  {userState.name}
+          {/* User Profile Avatar Dropdown Menu or Guest Login Prompt */}
+          {!token || userState.isGuest ? (
+            <div className="flex items-center gap-2 sm:gap-3 pl-1 border-l border-slate-800">
+              {/* Guest Profile Badge */}
+              <div
+                onClick={() => {
+                  setAuthModalMode('login');
+                  setIsAuthModalOpen(true);
+                }}
+                className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer group"
+                title="Guest Mode - Click to Sign In"
+              >
+                <img
+                  src={userState.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                  alt="Guest Profile"
+                  className="w-8 h-8 rounded-xl object-cover border border-slate-700/80 group-hover:border-slate-500 transition-colors"
+                />
+                <div className="hidden xl:block text-left text-xs pr-1">
+                  <div className="font-semibold text-slate-300 group-hover:text-slate-100 transition-colors flex items-center gap-1">
+                    Guest Visitor
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Not Signed In
+                  </span>
                 </div>
-                <span className="text-[10px] text-slate-400 font-mono">
-                  {userState.karma} pts
-                </span>
               </div>
-              <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180 text-slate-200' : ''}`} />
-            </button>
+
+              {/* Login & Sign Up Prompt Buttons beside Guest Profile */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => {
+                    setAuthModalMode('login');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="text-xs font-bold text-slate-200 hover:text-white bg-slate-900/90 border border-slate-700 hover:border-slate-500 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => {
+                    setAuthModalMode('signup');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="text-xs font-bold text-slate-950 bg-slate-100 hover:bg-white px-3 py-1.5 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Sign Up
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="relative pl-1 border-l border-slate-800" ref={profileMenuRef}>
+              <button
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="flex items-center gap-2 p-1 rounded-xl hover:bg-slate-800/60 transition-all text-left focus:outline-none focus:ring-2 focus:ring-slate-700/50"
+                aria-expanded={isProfileMenuOpen}
+                aria-haspopup="true"
+              >
+                <img
+                  src={userState.avatar}
+                  alt={userState.name}
+                  className="w-9 h-9 rounded-xl object-cover border border-slate-700 shadow-sm"
+                />
+                <div className="hidden xl:block text-left text-xs">
+                  <div className="font-semibold text-slate-200 flex items-center gap-1">
+                    {userState.name}
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    {userState.karma} pts
+                  </span>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180 text-slate-200' : ''}`} />
+              </button>
 
             {/* Profile Dropdown Menu */}
             {isProfileMenuOpen && (

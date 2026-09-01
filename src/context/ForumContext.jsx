@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { INITIAL_POSTS, GU_CHANNELS, GU_TAGS, CURRENT_USER, UPCOMING_EVENTS } from '../data/mockData';
+import { INITIAL_POSTS, GU_CHANNELS, GU_TAGS, GUEST_USER, CURRENT_USER, UPCOMING_EVENTS } from '../data/mockData';
 import { api } from '../services/api';
 
 const ForumContext = createContext();
@@ -23,9 +23,13 @@ export const ForumProvider = ({ children }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
+  const [token, setToken] = useState(() => localStorage.getItem('gucampusbridge_token'));
+
   const [userState, setUserState] = useState(() => {
     const savedUser = localStorage.getItem('gucampusbridge_user');
-    return savedUser ? JSON.parse(savedUser) : CURRENT_USER;
+    const savedToken = localStorage.getItem('gucampusbridge_token');
+    if (!savedToken) return GUEST_USER;
+    return savedUser ? JSON.parse(savedUser) : GUEST_USER;
   });
 
   const [notifications, setNotifications] = useState([
@@ -360,7 +364,8 @@ export const ForumProvider = ({ children }) => {
   const logout = () => {
     setToken(null);
     localStorage.removeItem('gucampusbridge_token');
-    setUserState(CURRENT_USER);
+    localStorage.removeItem('gucampusbridge_user');
+    setUserState(GUEST_USER);
   };
 
   const updateProfile = async (profileData) => {

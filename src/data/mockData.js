@@ -21,6 +21,23 @@ export const GU_TAGS = [
   { id: 'hostel-query', name: 'Hostel & Transport' },
 ];
 
+export const GUEST_USER = {
+  id: 'usr_guest',
+  name: 'Guest Visitor',
+  handle: '@guest_user',
+  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+  role: 'Campus Visitor',
+  badge: 'Guest',
+  department: 'Galgotias University',
+  bio: 'Sign in to participate in campus discussions and post replies.',
+  karma: 0,
+  isGuest: true,
+  upvotedPostIds: [],
+  downvotedPostIds: [],
+  upvotedCommentIds: [],
+  savedPostIds: [],
+};
+
 export const CURRENT_USER = {
   id: 'usr_me',
   name: 'Aryan Sharma',
