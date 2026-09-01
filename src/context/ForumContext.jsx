@@ -333,6 +333,7 @@ export const ForumProvider = ({ children }) => {
     return b.votes + b.commentCount * 2 - (a.votes + a.commentCount * 2); // Hot score default
   });
 
+  const [token, setToken] = useState(() => localStorage.getItem('gucampusbridge_token'));
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login'); // 'login' | 'signup' | 'profile'
 
