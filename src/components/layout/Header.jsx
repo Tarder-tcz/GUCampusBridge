@@ -369,11 +369,11 @@ export const Header = () => {
               </div>
             )}
           </div>
-
-        </div>
+        )}
 
       </div>
-    </header>
-  );
+    </div>
+  </header>
+);
 };
 
