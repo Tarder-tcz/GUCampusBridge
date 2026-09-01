@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_BASE || (
+  typeof window !== 'undefined' && window.location.hostname.includes('onrender.com')
+    ? 'https://gucampusbridge-backend.onrender.com/api'
+    : '/api'
+);
 
 function getHeaders(token = null) {
   const headers = { 'Content-Type': 'application/json' };
