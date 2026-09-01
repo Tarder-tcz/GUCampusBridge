@@ -23,6 +23,9 @@ export const ForumProvider = ({ children }) => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
+  const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
+  const [isStaffPortalOpen, setIsStaffPortalOpen] = useState(false);
+
   const [token, setToken] = useState(() => localStorage.getItem('gucampusbridge_token'));
 
   const [userState, setUserState] = useState(() => {
@@ -399,6 +402,10 @@ export const ForumProvider = ({ children }) => {
         setIsCreateModalOpen,
         isNotificationsOpen,
         setIsNotificationsOpen,
+        isMentorModalOpen,
+        setIsMentorModalOpen,
+        isStaffPortalOpen,
+        setIsStaffPortalOpen,
         isAuthModalOpen,
         setIsAuthModalOpen,
         authModalMode,

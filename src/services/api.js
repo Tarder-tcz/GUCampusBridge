@@ -126,5 +126,58 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to add comment');
     return res.json();
+  },
+
+  // 1-on-1 Mentorship & Staff Portal Services
+  async getMentors(department = 'all') {
+    const res = await fetch(`${API_BASE}/mentors?department=${encodeURIComponent(department)}`);
+    if (!res.ok) throw new Error('Failed to fetch mentors');
+    return res.json();
+  },
+
+  async submitMentorshipRequest(requestData) {
+    const res = await fetch(`${API_BASE}/mentorship-requests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(requestData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to submit request');
+    return data;
+  },
+
+  async staffLogin(specialTag, password) {
+    const res = await fetch(`${API_BASE}/staff/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ specialTag, password }),
+    });
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Staff authentication failed');
+      return data;
+    }
+    throw new Error(`Backend server error (${res.status}). Please ensure Express backend is running on port 5000.`);
+  },
+
+  async getStaffRequests(staffToken) {
+    const res = await fetch(`${API_BASE}/staff/requests`, {
+      headers: getHeaders(staffToken),
+    });
+    if (!res.ok) throw new Error('Failed to fetch staff requests');
+    return res.json();
+  },
+
+  async updateStaffRequest(requestId, status, replyMessage, staffToken) {
+    const res = await fetch(`${API_BASE}/staff/requests/${requestId}`, {
+      method: 'PUT',
+      headers: getHeaders(staffToken),
+      body: JSON.stringify({ status, replyMessage }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update request');
+    return data;
   }
 };
+

@@ -10,6 +10,8 @@ import { PostPage } from './pages/PostPage';
 import { CreatePostModal } from './components/forum/CreatePostModal';
 import { NotificationDrawer } from './components/notifications/NotificationDrawer';
 import { AuthModal } from './components/auth/AuthModal';
+import { MentorConnectModal } from './components/mentorship/MentorConnectModal';
+import { StaffPortalModal } from './components/mentorship/StaffPortalModal';
 import { Sparkles, MessageSquarePlus, Filter, X } from 'lucide-react';
 
 const ForumMainContent = () => {
@@ -22,26 +24,39 @@ const ForumMainContent = () => {
     searchQuery,
     setSearchQuery,
     setIsCreateModalOpen,
-    channels
+    setIsAuthModalOpen,
+    setAuthModalMode,
+    channels,
+    token,
+    userState
   } = useForum();
 
   const currentChannelObj = channels.find(c => c.id === activeChannel) || channels[0];
 
+  const handleStartDiscussion = () => {
+    if (!token || userState.isGuest) {
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+    } else {
+      setIsCreateModalOpen(true);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col site-gradient-bg text-slate-100 font-sans">
-      
+
       {/* Navigation Header */}
       <Header />
 
       {/* Main App Layout Grid */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 flex flex-col lg:flex-row gap-6">
-        
+
         {/* Left Sidebar Navigation */}
         <Sidebar />
 
         {/* Center Content Section */}
         <section className="flex-1 min-w-0 flex flex-col gap-5">
-          
+
           {selectedPost ? (
             /* Selected Post Detail View */
             <PostDetail post={selectedPost} />
@@ -62,7 +77,7 @@ const ForumMainContent = () => {
                 </div>
 
                 <button
-                  onClick={() => setIsCreateModalOpen(true)}
+                  onClick={handleStartDiscussion}
                   className="bg-slate-100 hover:bg-white text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer"
                 >
                   <MessageSquarePlus className="w-4 h-4" />
@@ -114,7 +129,7 @@ const ForumMainContent = () => {
                       setSelectedTag(null);
                       setSearchQuery('');
                     }}
-                    className="mt-4 bg-slate-900 border border-slate-700 hover:border-slate-500 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl transition-all"
+                    className="mt-4 bg-slate-900 border border-slate-700 hover:border-slate-500 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer"
                   >
                     Reset All Filters
                   </button>
@@ -134,6 +149,9 @@ const ForumMainContent = () => {
       <CreatePostModal />
       <NotificationDrawer />
       <AuthModal />
+      <MentorConnectModal />
+      <StaffPortalModal />
+
 
     </div>
   );

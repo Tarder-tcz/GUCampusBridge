@@ -94,3 +94,35 @@ model Event {
   date  String
   tag   String
 }
+
+model StaffMentor {
+  id               String              @id @default(uuid())
+  email            String              @unique
+  password         String
+  specialTag       String              @unique
+  name             String
+  role             String              // "Professor" | "Senior Mentor" | "Student Volunteer" | "Academic Counselor"
+  department       String              // e.g. "School of Computer Science & Engineering"
+  avatar           String
+  bio              String              @default("Galgotias University Mentor & Faculty")
+  requestsReceived MentorshipRequest[]
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+model MentorshipRequest {
+  id                String      @id @default(uuid())
+  admissionNo       String
+  studentName       String
+  contactNo         String
+  studentDepartment String
+  reason            String
+  mentorId          String
+  mentor            StaffMentor @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  mentorName        String
+  status            String      @default("PENDING") // "PENDING" | "APPROVED" | "REJECTED" | "RESOLVED"
+  replyMessage      String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+

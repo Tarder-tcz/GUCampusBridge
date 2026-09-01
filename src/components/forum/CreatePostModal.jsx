@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -17,12 +17,27 @@ export const CreatePostModal = () => {
   const {
     isCreateModalOpen,
     setIsCreateModalOpen,
+    setIsAuthModalOpen,
+    setAuthModalMode,
     channels,
     tags,
-    addPost
+    addPost,
+    token,
+    userState
   } = useForum();
 
   const [selectedTags, setSelectedTags] = useState([]);
+
+  const isGuest = !token || userState?.isGuest;
+
+  // Immediately redirect guests to the Login Modal section
+  useEffect(() => {
+    if (isCreateModalOpen && isGuest) {
+      setIsCreateModalOpen(false);
+      setAuthModalMode('login');
+      setIsAuthModalOpen(true);
+    }
+  }, [isCreateModalOpen, isGuest, setIsCreateModalOpen, setAuthModalMode, setIsAuthModalOpen]);
 
   const {
     register,
@@ -39,7 +54,7 @@ export const CreatePostModal = () => {
     }
   });
 
-  if (!isCreateModalOpen) return null;
+  if (!isCreateModalOpen || isGuest) return null;
 
   const toggleTagSelection = (tagName) => {
     if (selectedTags.includes(tagName)) {
@@ -59,7 +74,7 @@ export const CreatePostModal = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
       <div className="w-full max-w-2xl glass-panel rounded-2xl border border-slate-700/80 overflow-hidden shadow-2xl">
-        
+
         {/* Modal Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/90">
           <div className="flex items-center gap-2">
@@ -70,7 +85,7 @@ export const CreatePostModal = () => {
           </div>
           <button
             onClick={() => setIsCreateModalOpen(false)}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -78,7 +93,7 @@ export const CreatePostModal = () => {
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-5 flex flex-col gap-4">
-          
+
           {/* Title input */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 mb-1">
@@ -132,7 +147,7 @@ export const CreatePostModal = () => {
                     key={t.id}
                     type="button"
                     onClick={() => toggleTagSelection(t.name)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all ${
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-slate-700 text-slate-100 border-slate-500 font-semibold scale-105'
                         : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
@@ -173,7 +188,7 @@ export const CreatePostModal = () => {
             <button
               type="button"
               onClick={() => setIsCreateModalOpen(false)}
-              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200"
+              className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200 cursor-pointer"
             >
               Cancel
             </button>

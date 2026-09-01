@@ -555,6 +555,166 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
   }
 });
 
+/* ==========================================
+   1-ON-1 MENTORSHIP & STAFF PORTAL ENDPOINTS
+   ========================================== */
+
+// GET /api/mentors - List mentors with optional department filter
+app.get('/api/mentors', async (req, res) => {
+  try {
+    const { department } = req.query;
+    let mentors;
+    if (department && department !== 'all') {
+      mentors = await prisma.staffMentor.findMany({
+        where: {
+          department: {
+            contains: department,
+            mode: 'insensitive'
+          }
+        }
+      });
+    } else {
+      mentors = await prisma.staffMentor.findMany();
+    }
+    res.json(mentors.map(m => {
+      const { password, ...mClean } = m;
+      return mClean;
+    }));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch mentors list' });
+  }
+});
+
+// POST /api/mentorship-requests - Submit student 1-on-1 request
+app.post('/api/mentorship-requests', async (req, res) => {
+  try {
+    const { admissionNo, studentName, contactNo, studentDepartment, reason, mentorId } = req.body;
+
+    if (!admissionNo || !studentName || !contactNo || !reason || !mentorId) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const mentor = await prisma.staffMentor.findUnique({ where: { id: mentorId } });
+    if (!mentor) {
+      return res.status(404).json({ error: 'Selected mentor not found' });
+    }
+
+    const request = await prisma.mentorshipRequest.create({
+      data: {
+        admissionNo,
+        studentName,
+        contactNo,
+        studentDepartment: studentDepartment || 'General Student',
+        reason,
+        mentorId,
+        mentorName: mentor.name,
+        status: 'PENDING'
+      }
+    });
+
+    res.status(201).json({
+      message: '1-on-1 Mentorship Request submitted successfully!',
+      request
+    });
+  } catch (err) {
+    console.error('Mentorship request submission error:', err);
+    res.status(500).json({ error: 'Failed to submit mentorship request' });
+  }
+});
+
+// POST /api/staff/login - Staff / Mentor Login using special tag and password
+app.post('/api/staff/login', async (req, res) => {
+  try {
+    const { specialTag, password } = req.body;
+
+    if (!specialTag || !password) {
+      return res.status(400).json({ error: 'Special Tag and Password are required' });
+    }
+
+    let tagToSearch = specialTag.trim();
+
+    let staff = await prisma.staffMentor.findFirst({
+      where: { specialTag: { equals: tagToSearch, mode: 'insensitive' } }
+    });
+
+    if (!staff) {
+      // Flexible alias lookup (e.g. PROF-CSE-101 maps to PROF-SCSE-101)
+      const altTag = tagToSearch.replace('CSE', 'SCSE');
+      staff = await prisma.staffMentor.findFirst({
+        where: { specialTag: { equals: altTag, mode: 'insensitive' } }
+      });
+    }
+
+    if (!staff) {
+      return res.status(401).json({ error: 'Invalid Staff Special Tag or Password' });
+    }
+
+    const isMatch = bcrypt.compareSync(password, staff.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid Staff Special Tag or Password' });
+    }
+
+    const token = jwt.sign({ id: staff.id, role: 'STAFF', specialTag: staff.specialTag }, JWT_SECRET, { expiresIn: '7d' });
+    const { password: _, ...staffClean } = staff;
+
+    res.json({
+      message: 'Staff login successful',
+      token,
+      staff: staffClean
+    });
+  } catch (err) {
+    console.error('Staff login error:', err);
+    res.status(500).json({ error: 'Staff authentication failed' });
+  }
+});
+
+// GET /api/staff/requests - Fetch incoming requests for logged in staff mentor
+app.get('/api/staff/requests', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Staff authentication token missing' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (!decoded || decoded.role !== 'STAFF') {
+      return res.status(403).json({ error: 'Access denied: Staff login required' });
+    }
+
+    const requests = await prisma.mentorshipRequest.findMany({
+      where: { mentorId: decoded.id },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch staff requests' });
+  }
+});
+
+// PUT /api/staff/requests/:id - Update status and send reply answer
+app.put('/api/staff/requests/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, replyMessage } = req.body;
+
+    const updated = await prisma.mentorshipRequest.update({
+      where: { id },
+      data: {
+        ...(status && { status }),
+        ...(replyMessage !== undefined && { replyMessage })
+      }
+    });
+
+    res.json({
+      message: 'Request updated successfully',
+      request: updated
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update mentorship request' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 GUCampusBridge Auth Server running on http://localhost:${PORT}`);
 });
+

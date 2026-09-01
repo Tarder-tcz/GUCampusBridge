@@ -27,3 +27,4 @@ dist-ssr
 prisma/*.db
 prisma/*.db-journal
 
+.neon
