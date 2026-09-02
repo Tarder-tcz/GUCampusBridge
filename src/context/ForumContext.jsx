@@ -17,7 +17,7 @@ export const ForumProvider = ({ children }) => {
   const [activeChannel, setActiveChannel] = useState('all');
   const [selectedTag, setSelectedTag] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('hot'); // 'hot', 'new', 'top', 'unanswered', 'solved'
+  const [sortBy, setSortBy] = useState('new'); // Default to 'new' (Date & Time posted, newest first)
   const [viewMode, setViewMode] = useState('card'); // 'card' | 'compact'
   const [selectedPost, setSelectedPost] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -305,11 +305,13 @@ export const ForumProvider = ({ children }) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
 
-    if (sortBy === 'new') return 0; // Natural order
     if (sortBy === 'top') return b.votes - a.votes;
     if (sortBy === 'unanswered') return a.commentCount - b.commentCount;
     if (sortBy === 'solved') return (b.isSolved ? 1 : 0) - (a.isSolved ? 1 : 0);
-    return b.votes + b.commentCount * 2 - (a.votes + a.commentCount * 2); // Hot score default
+    if (sortBy === 'hot') return (b.votes + b.commentCount * 2) - (a.votes + a.commentCount * 2);
+
+    // Default ('new'): Sort according to Date and Time posted (newest at the top)
+    return 0;
   });
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
