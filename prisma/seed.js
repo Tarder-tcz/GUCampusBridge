@@ -25,8 +25,6 @@ const GU_TAGS = [
   { id: 'hostel-query', name: 'Hostel & Transport' },
 ];
 
-const USERS = [];
-
 const UPCOMING_EVENTS = [
   { title: 'SCSE CAT-2 Examinations', date: 'Sep 02, 2026', tag: 'Academic' },
   { title: 'TCS & Infosys Placement Drive', date: 'Sep 10, 2026', tag: 'Placement' },
@@ -93,42 +91,46 @@ const STAFF_MENTORS = [
   }
 ];
 
-const INITIAL_POSTS = [];
-
 async function seed() {
-  console.log('Seeding relational PostgreSQL database...');
+  console.log('Safely seeding database defaults with upserts without deleting users or posts...');
 
-  // Reset database tables
-  await prisma.mentorshipRequest.deleteMany({});
-  await prisma.staffMentor.deleteMany({});
-  await prisma.comment.deleteMany({});
-  await prisma.post.deleteMany({});
-  await prisma.channel.deleteMany({});
-  await prisma.tag.deleteMany({});
-  await prisma.event.deleteMany({});
-  await prisma.user.deleteMany({});
-
-  // Insert channels
+  // Safe Upsert Channels (No deleteMany!)
   for (const ch of GU_CHANNELS) {
-    await prisma.channel.create({ data: ch });
+    await prisma.channel.upsert({
+      where: { id: ch.id },
+      update: { name: ch.name, label: ch.label, icon: ch.icon },
+      create: ch
+    });
   }
 
-  // Insert tags
+  // Safe Upsert Tags (No deleteMany!)
   for (const tg of GU_TAGS) {
-    await prisma.tag.create({ data: tg });
+    await prisma.tag.upsert({
+      where: { id: tg.id },
+      update: { name: tg.name },
+      create: tg
+    });
   }
 
-  // Insert events
-  for (const ev of UPCOMING_EVENTS) {
-    await prisma.event.create({ data: ev });
-  }
-
-  // Insert Staff Mentors
+  // Safe Upsert Staff Mentors (No deleteMany!)
   for (const st of STAFF_MENTORS) {
-    await prisma.staffMentor.create({ data: st });
+    await prisma.staffMentor.upsert({
+      where: { id: st.id },
+      update: {
+        email: st.email,
+        password: st.password,
+        specialTag: st.specialTag,
+        name: st.name,
+        role: st.role,
+        department: st.department,
+        avatar: st.avatar,
+        bio: st.bio
+      },
+      create: st
+    });
   }
 
-  console.log('Successfully seeded relational database with Staff Mentors!');
+  console.log('Successfully completed safe database seeding without wiping user or post data!');
 }
 
 seed()
