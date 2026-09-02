@@ -143,8 +143,7 @@ export const Header = () => {
                   className="bg-transparent text-slate-300 focus:outline-none cursor-pointer"
                 >
                   <option value="new" className="bg-slate-900">Newest First (Date & Time)</option>
-                  <option value="hot" className="bg-slate-900">Hot Discussions</option>
-                  <option value="top" className="bg-slate-900">Top Voted</option>
+                  <option value="comments" className="bg-slate-900">Trending (Most Comments)</option>
                   <option value="unanswered" className="bg-slate-900">Unanswered</option>
                   <option value="solved" className="bg-slate-900">Solved Only</option>
                 </select>

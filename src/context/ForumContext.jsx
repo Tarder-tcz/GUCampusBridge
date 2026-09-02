@@ -305,12 +305,11 @@ export const ForumProvider = ({ children }) => {
     if (a.isPinned && !b.isPinned) return -1;
     if (!a.isPinned && b.isPinned) return 1;
 
-    if (sortBy === 'top') return b.votes - a.votes;
+    if (sortBy === 'comments' || sortBy === 'trending' || sortBy === 'hot') return b.commentCount - a.commentCount;
     if (sortBy === 'unanswered') return a.commentCount - b.commentCount;
     if (sortBy === 'solved') return (b.isSolved ? 1 : 0) - (a.isSolved ? 1 : 0);
-    if (sortBy === 'hot') return (b.votes + b.commentCount * 2) - (a.votes + a.commentCount * 2);
 
-    // Default ('new'): Sort according to Date and Time posted (newest at the top)
+    // Default ('new'): Sort according to Date and Time posted (newest first)
     return 0;
   });
 

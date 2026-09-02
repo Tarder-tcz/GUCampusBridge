@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useForum } from '../../context/ForumContext';
 import {
-  ArrowBigUp,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -11,22 +10,10 @@ import {
 import confetti from 'canvas-confetti';
 
 export const CommentItem = ({ comment, postId, depth = 0 }) => {
-  const { addCommentToPost, toggleMarkSolution, userState } = useForum();
+  const { addCommentToPost, toggleMarkSolution } = useForum();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
-  const [upvotes, setUpvotes] = useState(comment.votes);
-  const [hasUpvoted, setHasUpvoted] = useState(userState.upvotedCommentIds?.includes(comment.id) || false);
-
-  const handleVote = () => {
-    if (hasUpvoted) {
-      setUpvotes(v => v - 1);
-      setHasUpvoted(false);
-    } else {
-      setUpvotes(v => v + 1);
-      setHasUpvoted(true);
-    }
-  };
 
   const handleReplySubmit = (e) => {
     e.preventDefault();
@@ -104,22 +91,10 @@ export const CommentItem = ({ comment, postId, depth = 0 }) => {
             {/* Comment Actions */}
             <div className="flex items-center gap-4 pl-6 pt-1 text-[11px] text-slate-400 font-medium">
               <button
-                onClick={handleVote}
-                className={`flex items-center gap-1 px-2 py-0.5 rounded-lg transition-colors ${
-                  hasUpvoted
-                    ? 'bg-slate-800 text-slate-100 border border-slate-700'
-                    : 'hover:text-slate-200'
-                }`}
-              >
-                <ArrowBigUp className={`w-4 h-4 ${hasUpvoted ? 'fill-slate-100' : ''}`} />
-                <span>{upvotes}</span>
-              </button>
-
-              <button
                 onClick={() => setIsReplying(!isReplying)}
                 className="flex items-center gap-1 hover:text-slate-100 transition-colors"
               >
-                <CornerDownRight className="w-3.5 h-3.5" />
+                <CornerDownRight className="w-3.5 h-3.5 text-slate-400" />
                 <span>Reply</span>
               </button>
             </div>
@@ -140,7 +115,7 @@ export const CommentItem = ({ comment, postId, depth = 0 }) => {
           />
           <button
             type="submit"
-            className="bg-slate-100 hover:bg-white text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1"
+            className="bg-slate-100 hover:bg-white text-slate-950 font-bold px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 cursor-pointer"
           >
             <Send className="w-3 h-3" />
             <span>Send</span>

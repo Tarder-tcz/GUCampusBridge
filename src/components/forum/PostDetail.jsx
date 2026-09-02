@@ -3,17 +3,15 @@ import { useForum } from '../../context/ForumContext';
 import { CommentTree } from './CommentTree';
 import {
   ArrowLeft,
-  ArrowBigUp,
-  ArrowBigDown,
   Bookmark,
-  CheckCircle2
+  CheckCircle2,
+  MessageSquare,
+  Eye
 } from 'lucide-react';
 
 export const PostDetail = ({ post }) => {
-  const { setSelectedPost, togglePostVote, toggleBookmark, userState } = useForum();
+  const { setSelectedPost, toggleBookmark, userState } = useForum();
 
-  const isUpvoted = userState.upvotedPostIds.includes(post.id);
-  const isDownvoted = userState.downvotedPostIds.includes(post.id);
   const isSaved = userState.savedPostIds.includes(post.id);
 
   return (
@@ -22,7 +20,7 @@ export const PostDetail = ({ post }) => {
       {/* Back Button */}
       <button
         onClick={() => setSelectedPost(null)}
-        className="self-start flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-100 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl transition-all"
+        className="self-start flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-100 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
       >
         <ArrowLeft className="w-4 h-4" />
         <span>Back to Discussions</span>
@@ -56,7 +54,7 @@ export const PostDetail = ({ post }) => {
             </span>
             <button
               onClick={() => toggleBookmark(post.id)}
-              className={`p-2 rounded-xl border transition-colors ${
+              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
                 isSaved
                   ? 'text-slate-100 bg-slate-800 border-slate-700'
                   : 'text-slate-400 border-slate-800 hover:text-slate-200'
@@ -98,33 +96,14 @@ export const PostDetail = ({ post }) => {
 
         {/* Action Controls */}
         <div className="flex items-center justify-between pt-4 text-xs font-semibold">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => togglePostVote(post.id, 'up')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all ${
-                isUpvoted
-                  ? 'bg-slate-800 text-slate-100 border-slate-700'
-                  : 'bg-slate-900 text-slate-300 border-slate-800 hover:text-slate-100'
-              }`}
-            >
-              <ArrowBigUp className={`w-5 h-5 ${isUpvoted ? 'fill-slate-100' : ''}`} />
-              <span>{post.votes} Upvotes</span>
-            </button>
-
-            <button
-              onClick={() => togglePostVote(post.id, 'down')}
-              className={`p-1.5 rounded-xl border transition-all ${
-                isDownvoted
-                  ? 'bg-slate-800 text-slate-100 border-slate-700'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-100'
-              }`}
-            >
-              <ArrowBigDown className={`w-5 h-5 ${isDownvoted ? 'fill-slate-100' : ''}`} />
-            </button>
+          <div className="flex items-center gap-2 text-slate-300 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+            <MessageSquare className="w-4 h-4 text-slate-400" />
+            <span>{post.commentCount} Comments</span>
           </div>
 
-          <div className="flex items-center gap-3 text-slate-400 font-mono">
-            <span>👁️ {post.views} Views</span>
+          <div className="flex items-center gap-1.5 text-slate-400 font-mono text-xs">
+            <Eye className="w-4 h-4 text-slate-500" />
+            <span>{post.views} Views</span>
           </div>
         </div>
 
