@@ -171,43 +171,19 @@ export const ForumProvider = ({ children }) => {
 
   // Add New Post with API sync
   const addPost = async (newPostData) => {
-    const channel = channels.find(c => c.id === newPostData.channelId) || channels[1];
-
-    const tempPost = {
-      id: `post-${Date.now()}`,
-      channelId: newPostData.channelId,
-      channelName: channel.name,
-      title: newPostData.title,
-      content: newPostData.content,
-      author: {
-        name: userState.name,
-        handle: userState.handle,
-        role: userState.role,
-        badge: userState.badge,
-        badgeColor: userState.badgeColor,
-        avatar: userState.avatar,
-      },
-      createdAt: 'Just now',
-      votes: 1,
-      commentCount: 0,
-      views: 12,
-      tags: newPostData.tags || [],
-      isSolved: false,
-      solvedCommentId: null,
-      isPinned: false,
-      comments: []
-    };
-
-    setPosts(prev => [tempPost, ...prev]);
-    setUserState(u => ({ ...u, upvotedPostIds: [...u.upvotedPostIds, tempPost.id] }));
+    // Reset channel filter to 'all' so new post is immediately visible in feed
+    setActiveChannel('all');
 
     try {
       const created = await api.createPost(newPostData);
       if (created) {
-        setPosts(prev => prev.map(p => p.id === tempPost.id ? created : p));
+        setPosts(prev => {
+          const filtered = prev.filter(p => p.id !== created.id);
+          return [created, ...filtered];
+        });
       }
     } catch (err) {
-      console.warn('Create post offline sync:', err);
+      console.warn('Create post error:', err);
     }
   };
 

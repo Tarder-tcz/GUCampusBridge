@@ -310,6 +310,7 @@ app.get('/api/events', async (req, res) => {
 app.get('/api/posts', async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
+      orderBy: { id: 'desc' },
       include: {
         comments: {
           include: {
@@ -379,6 +380,7 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
         channelId,
         channelName,
         tags: JSON.stringify(tags || []),
+        authorId: user ? user.id : null,
         authorName: user?.name || 'Aryan Sharma',
         authorHandle: user?.handle || '@aryan_scse24',
         authorRole: user?.role || 'SCSE 3rd Year',
