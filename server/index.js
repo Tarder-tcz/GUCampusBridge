@@ -397,17 +397,29 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
     });
 
     if (user) {
-      const upvotedArr = JSON.parse(user.upvotedPostIds || '[]');
-      upvotedArr.push(newPost.id);
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { upvotedPostIds: JSON.stringify(upvotedArr) }
-      });
+      try {
+        let upvotedArr = [];
+        try {
+          upvotedArr = typeof user.upvotedPostIds === 'string' ? JSON.parse(user.upvotedPostIds || '[]') : (user.upvotedPostIds || []);
+          if (!Array.isArray(upvotedArr)) upvotedArr = [];
+        } catch (e) {
+          upvotedArr = [];
+        }
+        if (!upvotedArr.includes(newPost.id)) {
+          upvotedArr.push(newPost.id);
+        }
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { upvotedPostIds: JSON.stringify(upvotedArr) }
+        });
+      } catch (userErr) {
+        console.warn('User upvote sync notice:', userErr.message);
+      }
     }
 
     res.status(201).json(formatPost(newPost));
   } catch (err) {
-    console.error(err);
+    console.error('Post creation endpoint error:', err);
     res.status(500).json({ error: 'Failed to create post' });
   }
 });
