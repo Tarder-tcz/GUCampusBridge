@@ -276,6 +276,75 @@ app.get('/api/user', authenticateToken, async (req, res) => {
   }
 });
 
+// GET /api/users/:userId/activity - Fetch user contributions (posts, comments, accepted answers)
+app.get('/api/users/:userId/activity', async (req, res) => {
+  try {
+    let { userId } = req.params;
+    let targetUser;
+
+    if (userId === 'me' || !userId) {
+      targetUser = await prisma.user.findFirst();
+    } else {
+      targetUser = await prisma.user.findUnique({ where: { id: userId } });
+      if (!targetUser) {
+        targetUser = await prisma.user.findFirst({
+          where: { handle: { equals: userId, mode: 'insensitive' } }
+        });
+      }
+    }
+
+    if (!targetUser) {
+      targetUser = await prisma.user.findFirst();
+    }
+
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Fetch user posts
+    const posts = await prisma.post.findMany({
+      where: {
+        OR: [
+          { authorId: targetUser.id },
+          { authorName: { equals: targetUser.name, mode: 'insensitive' } },
+          { authorHandle: { equals: targetUser.handle, mode: 'insensitive' } }
+        ]
+      },
+      orderBy: { id: 'desc' },
+      include: { comments: true }
+    });
+
+    // Fetch user comments
+    const comments = await prisma.comment.findMany({
+      where: {
+        OR: [
+          { authorName: { equals: targetUser.name, mode: 'insensitive' } },
+          { authorHandle: { equals: targetUser.handle, mode: 'insensitive' } }
+        ]
+      },
+      orderBy: { id: 'desc' }
+    });
+
+    // Filter accepted solutions
+    const acceptedAnswers = comments.filter(c => c.isSolution);
+
+    res.json({
+      user: formatUser(targetUser),
+      posts: posts.map(formatPost),
+      comments: comments.map(formatComment),
+      acceptedAnswers: acceptedAnswers.map(formatComment),
+      stats: {
+        totalPosts: posts.length,
+        totalComments: comments.length,
+        totalAnswers: acceptedAnswers.length
+      }
+    });
+  } catch (err) {
+    console.error('User activity fetch error:', err);
+    res.status(500).json({ error: 'Failed to fetch user activity' });
+  }
+});
+
 // GET /api/channels
 app.get('/api/channels', async (req, res) => {
   try {

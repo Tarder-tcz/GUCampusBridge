@@ -157,6 +157,8 @@ const ForumMainContent = () => {
   );
 };
 
+import { UserPage } from './pages/UserPage';
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -164,6 +166,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<ForumMainContent />} />
           <Route path="/post/:postId" element={<PostPage />} />
+          <Route path="/user/:userId" element={<UserPage />} />
+          <Route path="/user/me" element={<UserPage />} />
         </Routes>
       </ForumProvider>
     </BrowserRouter>

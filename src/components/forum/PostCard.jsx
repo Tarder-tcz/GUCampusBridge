@@ -100,8 +100,13 @@ export const PostCard = ({ post }) => {
             {post.channelName}
           </span>
           <div className="flex items-center gap-1.5 text-slate-400">
-            <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full object-cover border border-slate-700" />
-            <span className="font-medium text-slate-300">{post.author.name}</span>
+            <Link
+              to={`/user/${encodeURIComponent(post.author.handle || post.author.name)}`}
+              className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
+            >
+              <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-full object-cover border border-slate-700" />
+              <span className="font-medium hover:underline">{post.author.name}</span>
+            </Link>
             <span className="text-[9px] px-1.5 py-0.2 rounded border bg-slate-900 text-slate-300 border-slate-800">
               {post.author.badge}
             </span>

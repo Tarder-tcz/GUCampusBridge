@@ -63,6 +63,14 @@ export const api = {
     return res.json();
   },
 
+  async getUserActivity(userId = 'me') {
+    const res = await fetch(`${API_BASE}/users/${encodeURIComponent(userId)}/activity`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch user activity');
+    return res.json();
+  },
+
   async getChannels() {
     const res = await fetch(`${API_BASE}/channels`);
     if (!res.ok) throw new Error('Failed to fetch channels');

@@ -253,17 +253,14 @@ export const Header = () => {
                       </div>
 
                       <div className="space-y-0.5">
-                        <button
-                          onClick={() => {
-                            setIsProfileMenuOpen(false);
-                            setAuthModalMode('profile');
-                            setIsAuthModalOpen(true);
-                          }}
+                        <Link
+                          to="/user/me"
+                          onClick={() => setIsProfileMenuOpen(false)}
                           className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800/70 rounded-xl transition-colors text-left cursor-pointer"
                         >
                           <User className="w-4 h-4 text-slate-400" />
-                          <span>User Profile & Settings</span>
-                        </button>
+                          <span>My Profile & Contributions</span>
+                        </Link>
                       </div>
 
                       <div className="border-t border-slate-800/80 mt-1 pt-1">

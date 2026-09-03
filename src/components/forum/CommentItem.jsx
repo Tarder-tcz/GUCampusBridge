@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useForum } from '../../context/ForumContext';
 import {
   CheckCircle2,
@@ -53,8 +54,13 @@ export const CommentItem = ({ comment, postId, depth = 0 }) => {
             >
               {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
-            <img src={comment.author.avatar} alt={comment.author.name} className="w-6 h-6 rounded-full object-cover border border-slate-700" />
-            <span className="font-semibold text-slate-200 text-xs">{comment.author.name}</span>
+            <Link
+              to={`/user/${encodeURIComponent(comment.author.handle || comment.author.name)}`}
+              className="flex items-center gap-1.5 hover:text-white transition-colors"
+            >
+              <img src={comment.author.avatar} alt={comment.author.name} className="w-6 h-6 rounded-full object-cover border border-slate-700" />
+              <span className="font-semibold text-slate-200 text-xs hover:underline">{comment.author.name}</span>
+            </Link>
             <span className="text-[9px] px-1.5 py-0.2 rounded border bg-slate-900 text-slate-300 border-slate-800">
               {comment.author.badge}
             </span>
