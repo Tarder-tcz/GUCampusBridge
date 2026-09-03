@@ -3,8 +3,13 @@ import cors from 'cors';
 import pkg from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const { PrismaClient } = pkg;
 const app = express();
@@ -854,9 +859,6 @@ app.put('/api/staff/requests/:id', async (req, res) => {
 });
 
 // Serve static frontend assets and SPA catch-all for page refreshes
-const fs = require('fs');
-const path = require('path');
-
 const distPath = path.join(__dirname, '../dist');
 const localDistPath = path.join(__dirname, 'dist');
 const staticPath = fs.existsSync(distPath) ? distPath : (fs.existsSync(localDistPath) ? localDistPath : null);
