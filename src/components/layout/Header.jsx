@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useForum } from '../../context/ForumContext';
 import { SidebarContent } from './Sidebar';
 import {
@@ -10,6 +11,7 @@ import {
   SlidersHorizontal,
   ChevronDown,
   User,
+  Settings,
   LogOut,
   Menu,
   X,
@@ -24,8 +26,6 @@ export const Header = () => {
     setSearchQuery,
     setIsCreateModalOpen,
     setIsNotificationsOpen,
-    setIsAuthModalOpen,
-    setAuthModalMode,
     logout,
     notifications,
     userState,
@@ -33,7 +33,9 @@ export const Header = () => {
     viewMode,
     setViewMode,
     sortBy,
-    setSortBy
+    setSortBy,
+    setIsAuthModalOpen,
+    setAuthModalMode
   } = useForum();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -95,14 +97,14 @@ export const Header = () => {
               </button>
 
               {/* Brand Logo & Name */}
-              <div
+              <Link
+                to="/"
                 className="flex items-center gap-2 cursor-pointer group"
-                onClick={() => window.location.reload()}
               >
                 <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-100 group-hover:text-white transition-colors">
                   GU Campus Forum
                 </span>
-              </div>
+              </Link>
             </div>
 
             {/* Top Right: Actions & Auth / Profile */}
@@ -215,7 +217,7 @@ export const Header = () => {
                   )}
                 </div>
               ) : (
-                /* LOGGED IN USER: User Profile Avatar PFP */
+                /* LOGGED IN USER: User Profile Avatar PFP Dropdown */
                 <div className="relative" ref={profileMenuRef}>
                   <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -253,13 +255,24 @@ export const Header = () => {
                       </div>
 
                       <div className="space-y-0.5">
+                        {/* Option 1: My Profile & Contributions Page */}
                         <Link
                           to="/user/me"
                           onClick={() => setIsProfileMenuOpen(false)}
                           className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800/70 rounded-xl transition-colors text-left cursor-pointer"
                         >
                           <User className="w-4 h-4 text-slate-400" />
-                          <span>My Profile & Contributions</span>
+                          <span>My Contributions & Activity</span>
+                        </Link>
+
+                        {/* Option 2: Account Settings Page */}
+                        <Link
+                          to="/settings"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-300 hover:text-slate-100 hover:bg-slate-800/70 rounded-xl transition-colors text-left cursor-pointer"
+                        >
+                          <Settings className="w-4 h-4 text-slate-400" />
+                          <span>Account & Profile Settings</span>
                         </Link>
                       </div>
 

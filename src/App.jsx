@@ -158,6 +158,7 @@ const ForumMainContent = () => {
 };
 
 import { UserPage } from './pages/UserPage';
+import { UserSettingsPage } from './pages/UserSettingsPage';
 
 export default function App() {
   return (
@@ -168,6 +169,7 @@ export default function App() {
           <Route path="/post/:postId" element={<PostPage />} />
           <Route path="/user/:userId" element={<UserPage />} />
           <Route path="/user/me" element={<UserPage />} />
+          <Route path="/settings" element={<UserSettingsPage />} />
         </Routes>
       </ForumProvider>
     </BrowserRouter>
