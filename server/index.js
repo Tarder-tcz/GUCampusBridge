@@ -865,14 +865,14 @@ const staticPath = fs.existsSync(distPath) ? distPath : (fs.existsSync(localDist
 
 if (staticPath) {
   app.use(express.static(staticPath));
-  app.get('*', (req, res) => {
+  app.get('(.*)', (req, res) => {
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
     res.sendFile(path.join(staticPath, 'index.html'));
   });
 } else {
-  app.get('*', (req, res) => {
+  app.get('(.*)', (req, res) => {
     if (req.path.startsWith('/api')) {
       return res.status(404).json({ error: 'API endpoint not found' });
     }
