@@ -9,7 +9,7 @@
     "dev:full": "concurrently \"npm run dev\" \"npm run server\"",
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
-    "build": "vite build",
+    "build": "vite build && node -e \"import('fs').then(fs => fs.copyFileSync('dist/index.html', 'dist/404.html'))\"",
     "lint": "oxlint",
     "preview": "vite preview",
     "postinstall": "prisma generate"
