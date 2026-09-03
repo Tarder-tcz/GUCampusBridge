@@ -20,27 +20,44 @@ export const PostPage = () => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadPost() {
       setLoading(true);
-      // Try local post list first
       const found = posts.find(p => p.id === postId);
       if (found) {
-        setPost(found);
-        setLoading(false);
+        if (isMounted) {
+          setPost(found);
+          setLoading(false);
+        }
         return;
       }
 
-      // Fetch from API
       try {
         const fetched = await api.getPostById(postId);
-        setPost(fetched);
+        if (isMounted && fetched) {
+          setPost(fetched);
+          setLoading(false);
+          return;
+        }
       } catch (err) {
-        console.error('Failed to load post:', err);
+        console.warn('Direct post fetch failed, fetching post list fallback:', err);
+      }
+
+      try {
+        const allPosts = await api.getPosts();
+        const fallbackFound = (allPosts || []).find(p => p.id === postId);
+        if (isMounted && fallbackFound) {
+          setPost(fallbackFound);
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback posts fetch error:', fallbackErr);
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
+
     loadPost();
+    return () => { isMounted = false; };
   }, [postId, posts]);
 
   const copyPostUrl = () => {

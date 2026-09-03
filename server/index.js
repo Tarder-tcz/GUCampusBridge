@@ -853,6 +853,31 @@ app.put('/api/staff/requests/:id', async (req, res) => {
   }
 });
 
+// Serve static frontend assets and SPA catch-all for page refreshes
+const fs = require('fs');
+const path = require('path');
+
+const distPath = path.join(__dirname, '../dist');
+const localDistPath = path.join(__dirname, 'dist');
+const staticPath = fs.existsSync(distPath) ? distPath : (fs.existsSync(localDistPath) ? localDistPath : null);
+
+if (staticPath) {
+  app.use(express.static(staticPath));
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(staticPath, 'index.html'));
+  });
+} else {
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(__dirname, '../index.html'));
+  });
+}
+
 app.listen(PORT, () => {
   console.log(`🚀 GUCampusBridge Auth Server running on http://localhost:${PORT}`);
 });
