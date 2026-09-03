@@ -280,15 +280,32 @@ app.get('/api/user', authenticateToken, async (req, res) => {
 app.get('/api/users/:userId/activity', async (req, res) => {
   try {
     let { userId } = req.params;
-    let targetUser;
+    let targetUser = null;
 
-    if (userId === 'me' || !userId) {
+    const rawId = userId ? decodeURIComponent(userId).trim() : '';
+    const cleanId = rawId.replace(/^@/, '');
+
+    if (rawId === 'me' || !rawId) {
       targetUser = await prisma.user.findFirst();
     } else {
-      targetUser = await prisma.user.findUnique({ where: { id: userId } });
+      // Try by UUID
+      try {
+        targetUser = await prisma.user.findUnique({ where: { id: rawId } });
+      } catch (e) {
+        targetUser = null;
+      }
+
+      // Try by handle or name
       if (!targetUser) {
         targetUser = await prisma.user.findFirst({
-          where: { handle: { equals: userId, mode: 'insensitive' } }
+          where: {
+            OR: [
+              { handle: { equals: rawId, mode: 'insensitive' } },
+              { handle: { equals: `@${cleanId}`, mode: 'insensitive' } },
+              { handle: { contains: cleanId, mode: 'insensitive' } },
+              { name: { equals: cleanId, mode: 'insensitive' } }
+            ]
+          }
         });
       }
     }

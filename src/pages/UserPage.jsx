@@ -36,6 +36,17 @@ export const UserPage = () => {
   // Active Tile Tab: 'posts' | 'comments' | 'answers'
   const [activeTab, setActiveTab] = useState('posts');
 
+  const DEFAULT_USER = {
+    name: 'Galgotias Contributor',
+    handle: '@campus_user',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    role: 'Student Member',
+    badge: 'GU Member',
+    department: 'School of Computer Science & Engineering',
+    karma: 100,
+    bio: 'Galgotias University student contributor profile.'
+  };
+
   useEffect(() => {
     async function loadUserData() {
       setLoading(true);
@@ -43,20 +54,28 @@ export const UserPage = () => {
 
       try {
         const data = await api.getUserActivity(queryId);
-        if (data) {
+        if (data && data.user) {
           setTargetUser(data.user);
           setUserPosts(data.posts || []);
           setUserComments(data.comments || []);
           setUserAnswers(data.acceptedAnswers || []);
           if (data.stats) setStats(data.stats);
+        } else {
+          // Fallback if data format unexpected
+          const currentUser = (userState && !userState.isGuest) ? userState : DEFAULT_USER;
+          setTargetUser(currentUser);
+          const filteredPosts = contextPosts.filter(p =>
+            p.author && (p.author.name === currentUser.name || p.author.handle === currentUser.handle)
+          );
+          setUserPosts(filteredPosts);
+          setStats({ totalPosts: filteredPosts.length, totalComments: 0, totalAnswers: 0 });
         }
       } catch (err) {
         console.warn('Failed to load user activity from API, fallback to local state:', err);
-        // Fallback to active logged in user if match
-        const currentUser = userState;
+        const currentUser = (userState && !userState.isGuest) ? userState : DEFAULT_USER;
         setTargetUser(currentUser);
         const filteredPosts = contextPosts.filter(p =>
-          p.author.name === currentUser.name || p.author.handle === currentUser.handle
+          p.author && (p.author.name === currentUser.name || p.author.handle === currentUser.handle)
         );
         setUserPosts(filteredPosts);
         setStats({ totalPosts: filteredPosts.length, totalComments: 0, totalAnswers: 0 });
@@ -68,7 +87,7 @@ export const UserPage = () => {
     loadUserData();
   }, [userId, userState, contextPosts]);
 
-  const displayedUser = targetUser || userState;
+  const displayedUser = targetUser || (userState && !userState.isGuest ? userState : DEFAULT_USER);
 
   return (
     <div className="min-h-screen flex flex-col site-gradient-bg text-slate-100 font-sans">
