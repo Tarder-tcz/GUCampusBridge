@@ -141,7 +141,7 @@ export const UserSettingsPage = () => {
                     placeholder="https://images.unsplash.com/..."
                     className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500 font-mono"
                   />
-                  <p className="text-[10px] text-slate-500">Provide an image link for your profile picture avatar.</p>
+                  <p className="text-[10px] text-slate-500">Provide an image link for your profile picture avatar. We can't afford to upload pictures yet :(</p>
                 </div>
               </div>
 

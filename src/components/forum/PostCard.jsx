@@ -12,6 +12,7 @@ import {
   Check,
   Flame
 } from 'lucide-react';
+import { formatTimeAgo } from '../../utils/timeAgo';
 
 export const PostCard = ({ post }) => {
   const {
@@ -111,7 +112,7 @@ export const PostCard = ({ post }) => {
               {post.author.badge}
             </span>
             <span>•</span>
-            <span className="text-[11px] text-slate-400">{post.createdAt}</span>
+            <span className="text-[11px] text-slate-400">{formatTimeAgo(post.createdAt)}</span>
           </div>
         </div>
 

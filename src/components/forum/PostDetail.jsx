@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForum } from '../../context/ForumContext';
+import { formatTimeAgo } from '../../utils/timeAgo';
 import { CommentTree } from './CommentTree';
 import {
   ArrowLeft,
@@ -44,7 +45,7 @@ export const PostDetail = ({ post }) => {
                   {post.author.badge}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">{post.author.role} • {post.createdAt}</p>
+              <p className="text-xs text-slate-400">{post.author.role} • {formatTimeAgo(post.createdAt)}</p>
             </div>
           </div>
 

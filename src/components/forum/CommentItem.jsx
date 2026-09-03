@@ -8,7 +8,7 @@ import {
   Send,
   CornerDownRight
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import { formatTimeAgo } from '../../utils/timeAgo';
 
 export const CommentItem = ({ comment, postId, depth = 0 }) => {
   const { addCommentToPost, toggleMarkSolution } = useForum();
@@ -64,7 +64,7 @@ export const CommentItem = ({ comment, postId, depth = 0 }) => {
             <span className="text-[9px] px-1.5 py-0.2 rounded border bg-slate-900 text-slate-300 border-slate-800">
               {comment.author.badge}
             </span>
-            <span className="text-[10px] text-slate-400">• {comment.createdAt}</span>
+            <span className="text-[10px] text-slate-400">• {formatTimeAgo(comment.createdAt)}</span>
           </div>
 
           {/* Solution Banner / Mark Solution Toggle */}

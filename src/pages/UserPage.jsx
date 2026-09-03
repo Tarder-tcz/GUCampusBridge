@@ -9,6 +9,7 @@ import { NotificationDrawer } from '../components/notifications/NotificationDraw
 import { AuthModal } from '../components/auth/AuthModal';
 import { PostCard } from '../components/forum/PostCard';
 import { api } from '../services/api';
+import { formatTimeAgo } from '../utils/timeAgo';
 import {
   User,
   FileText,
@@ -254,7 +255,7 @@ export const UserPage = () => {
                         <div key={comment.id} className="glass-card rounded-2xl p-4 border border-slate-800/80 space-y-2">
                           <div className="flex items-center justify-between text-xs text-slate-400">
                             <span className="font-medium text-slate-300">Contributed Comment</span>
-                            <span className="font-mono text-[11px]">{comment.createdAt}</span>
+                            <span className="font-mono text-[11px]">{formatTimeAgo(comment.createdAt)}</span>
                           </div>
                           <p className="text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-line bg-slate-900/60 p-3 rounded-xl border border-slate-800">
                             {comment.content}
@@ -290,7 +291,7 @@ export const UserPage = () => {
                             <span className="font-bold text-emerald-400 flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
                               <CheckCircle2 className="w-3.5 h-3.5" /> Community Solution
                             </span>
-                            <span className="font-mono text-[11px] text-slate-400">{answer.createdAt}</span>
+                            <span className="font-mono text-[11px] text-slate-400">{formatTimeAgo(answer.createdAt)}</span>
                           </div>
                           <p className="text-xs sm:text-sm text-slate-100 leading-relaxed whitespace-pre-line bg-slate-900/80 p-3 rounded-xl border border-slate-800">
                             {answer.content}
