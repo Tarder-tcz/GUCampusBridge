@@ -277,7 +277,7 @@ app.get('/api/user', authenticateToken, async (req, res) => {
 });
 
 // GET /api/users/:userId/activity - Fetch user contributions (posts, comments, accepted answers)
-app.get('/api/users/:userId/activity', async (req, res) => {
+app.get('/api/users/:userId/activity', authenticateToken, async (req, res) => {
   try {
     let { userId } = req.params;
     let targetUser = null;
@@ -286,7 +286,12 @@ app.get('/api/users/:userId/activity', async (req, res) => {
     const cleanId = rawId.replace(/^@/, '');
 
     if (rawId === 'me' || !rawId) {
-      targetUser = await prisma.user.findFirst();
+      if (req.userId) {
+        targetUser = await prisma.user.findUnique({ where: { id: req.userId } });
+      }
+      if (!targetUser) {
+        targetUser = await prisma.user.findFirst();
+      }
     } else {
       // Try by UUID
       try {
