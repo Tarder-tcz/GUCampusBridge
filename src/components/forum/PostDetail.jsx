@@ -21,84 +21,85 @@ export const PostDetail = ({ post }) => {
       {/* Back Button */}
       <button
         onClick={() => setSelectedPost(null)}
-        className="self-start flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-slate-100 bg-slate-900/80 border border-slate-800 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
+        className="self-start flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 hover:border-white/20 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer haptic-btn shadow-sm"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="w-4 h-4 text-rose-400" />
         <span>Back to Discussions</span>
       </button>
 
       {/* Main Post Card */}
-      <article className="glass-panel rounded-2xl p-5 sm:p-7 border border-slate-800/80">
+      <article className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/[0.08] shadow-2xl relative overflow-hidden">
+        <div className="absolute -right-16 -top-16 w-56 h-56 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
         
         {/* Header Metadata */}
-        <div className="flex items-center justify-between gap-3 mb-4 flex-wrap pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between gap-3 mb-5 flex-wrap pb-4 border-b border-white/[0.07] relative z-10">
           <div className="flex items-center gap-3">
             <img
               src={post.author.avatar}
               alt={post.author.name}
-              className="w-10 h-10 rounded-xl object-cover border border-slate-700"
+              className="w-11 h-11 rounded-xl object-cover ring-2 ring-white/10 shadow-md"
             />
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-100 text-sm">{post.author.name}</span>
-                <span className="text-[9px] px-2 py-0.5 rounded border bg-slate-900 text-slate-300 border-slate-800">
+                <span className="font-bold text-white text-sm sm:text-base">{post.author.name}</span>
+                <span className="text-[9px] px-2 py-0.5 rounded-md border bg-slate-950/80 text-rose-300 border-rose-500/20 font-mono">
                   {post.author.badge}
                 </span>
               </div>
-              <p className="text-xs text-slate-400">{post.author.role} • {formatTimeAgo(post.createdAt)}</p>
+              <p className="text-xs text-slate-400 font-mono mt-0.5">{post.author.role} • {formatTimeAgo(post.createdAt)}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-semibold text-slate-400 bg-slate-900 px-3 py-1 rounded-xl border border-slate-800">
+            <span className="text-xs font-mono font-semibold text-rose-300 bg-rose-500/10 px-3 py-1 rounded-xl border border-rose-500/20">
               {post.channelName}
             </span>
             <button
               onClick={() => toggleBookmark(post.id)}
-              className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+              className={`p-2 rounded-xl border transition-colors cursor-pointer haptic-btn ${
                 isSaved
-                  ? 'text-slate-100 bg-slate-800 border-slate-700'
-                  : 'text-slate-400 border-slate-800 hover:text-slate-200'
+                  ? 'text-rose-400 bg-rose-500/10 border-rose-500/30'
+                  : 'text-slate-400 border-white/[0.08] hover:text-white hover:bg-white/[0.06]'
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-slate-100' : ''}`} />
+              <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-rose-400' : ''}`} />
             </button>
           </div>
         </div>
 
         {/* Title */}
-        <h1 className="text-xl sm:text-2xl font-extrabold text-slate-100 mb-4 leading-tight">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 leading-tight tracking-tight relative z-10">
           {post.title}
         </h1>
 
         {/* Solved Banner if applicable */}
         {post.isSolved && (
-          <div className="mb-5 p-3 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-between text-xs text-slate-200">
-            <div className="flex items-center gap-2 font-medium">
-              <CheckCircle2 className="w-5 h-5 text-slate-200 shrink-0" />
-              <span>This discussion has an accepted solution provided by the Galgotias community.</span>
+          <div className="mb-6 p-3.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.15)] flex items-center justify-between text-xs text-emerald-200 relative z-10">
+            <div className="flex items-center gap-2.5 font-medium">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+              <span>This academic discussion has an accepted, verified solution verified by the Galgotias community.</span>
             </div>
           </div>
         )}
 
         {/* Post Content Body */}
-        <div className="text-sm text-slate-200 leading-relaxed space-y-3 whitespace-pre-line mb-6">
+        <div className="text-sm text-slate-200 leading-relaxed space-y-3 whitespace-pre-line mb-6 relative z-10 font-normal">
           {post.content}
         </div>
 
         {/* Tags */}
-        <div className="flex items-center gap-2 flex-wrap pb-4 border-b border-slate-800">
+        <div className="flex items-center gap-2 flex-wrap pb-5 border-b border-white/[0.07] relative z-10">
           {post.tags.map((tag, idx) => (
-            <span key={idx} className="text-xs font-medium bg-slate-900 text-slate-300 px-2.5 py-1 rounded-lg border border-slate-800">
+            <span key={idx} className="text-xs font-mono bg-slate-950/60 text-slate-400 px-3 py-1 rounded-lg border border-white/[0.07]">
               #{tag}
             </span>
           ))}
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center justify-between pt-4 text-xs font-semibold">
-          <div className="flex items-center gap-2 text-slate-300 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
-            <MessageSquare className="w-4 h-4 text-slate-400" />
+        <div className="flex items-center justify-between pt-4 pb-6 text-xs font-semibold relative z-10">
+          <div className="flex items-center gap-2 text-slate-200 bg-slate-950/70 px-3 py-1.5 rounded-xl border border-white/[0.08] font-mono">
+            <MessageSquare className="w-4 h-4 text-rose-400" />
             <span>{post.commentCount} Comments</span>
           </div>
 
@@ -109,7 +110,9 @@ export const PostDetail = ({ post }) => {
         </div>
 
         {/* Comment Tree */}
-        <CommentTree post={post} />
+        <div className="relative z-10 pt-2 border-t border-white/[0.07]">
+          <CommentTree post={post} />
+        </div>
 
       </article>
 
