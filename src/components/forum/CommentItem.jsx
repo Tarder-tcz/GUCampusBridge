@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { useForum } from '../../context/ForumContext';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import {
   CheckCircle2,
   ChevronDown,
@@ -59,7 +60,12 @@ export const CommentItem = ({ comment, postId, depth = 0 }) => {
               to={`/user/${encodeURIComponent(comment.author.handle || comment.author.name)}`}
               className="flex items-center gap-1.5 hover:text-white transition-colors"
             >
-              <img src={comment.author.avatar} alt={comment.author.name} className="w-6 h-6 rounded-md object-cover ring-1 ring-white/10" />
+              <img
+                src={comment.author?.avatar || DEFAULT_AVATAR}
+                onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+                alt={comment.author?.name || 'User'}
+                className="w-6 h-6 rounded-md object-cover ring-1 ring-white/10"
+              />
               <span className="font-semibold text-slate-200 text-xs hover:underline">{comment.author.name}</span>
             </Link>
             <span className="text-[9px] px-1.5 py-0.2 rounded-md border bg-slate-900/90 text-slate-400 border-white/[0.07] font-mono">

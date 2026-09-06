@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForum } from '../../context/ForumContext';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import {
   MessageSquare,
   Eye,
@@ -16,15 +17,16 @@ import { formatTimeAgo } from '../../utils/timeAgo';
 export const PostCard = ({ post }) => {
   const {
     toggleBookmark,
-    setSelectedPost,
     userState,
     viewMode
   } = useForum();
 
+  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const isSaved = userState.savedPostIds.includes(post.id);
 
   const copyPostUrl = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     const fullUrl = `${window.location.origin}/post/${post.id}`;
     navigator.clipboard.writeText(fullUrl);
@@ -35,9 +37,9 @@ export const PostCard = ({ post }) => {
   // Compact View Mode
   if (viewMode === 'compact') {
     return (
-      <div
-        onClick={() => setSelectedPost(post)}
-        className="group cursor-pointer glass-card rounded-xl p-3 flex items-center justify-between gap-3 border border-white/[0.07] hover:border-white/20 transition-all shadow-sm"
+      <Link
+        to={`/post/${post.id}`}
+        className="group cursor-pointer glass-card rounded-xl p-3 flex items-center justify-between gap-3 border border-white/[0.07] hover:border-white/20 transition-all shadow-sm block text-left no-underline"
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold font-mono bg-slate-950/80 text-slate-300 border border-white/[0.08]">
@@ -57,37 +59,52 @@ export const PostCard = ({ post }) => {
               )}
             </div>
             <h3 className="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-rose-200 transition-colors truncate">
-              <Link to={`/post/${post.id}`} className="hover:underline">
-                {post.title}
-              </Link>
+              {post.title}
             </h3>
           </div>
         </div>
 
         <div className="flex items-center gap-3 text-xs text-slate-400 shrink-0 font-mono">
           <div className="hidden sm:flex items-center gap-1.5">
-            <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-md object-cover ring-1 ring-white/10" />
+            <img
+              src={post.author?.avatar || DEFAULT_AVATAR}
+              onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+              alt={post.author?.name || 'User'}
+              className="w-5 h-5 rounded-md object-cover ring-1 ring-white/10"
+            />
             <span className="text-[11px] text-slate-300">{post.author.name}</span>
           </div>
-          <a
-            href={`/post/${post.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="p-1 hover:text-white hover:bg-white/[0.08] rounded transition-colors"
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.open(`/post/${post.id}`, '_blank');
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(`/post/${post.id}`, '_blank');
+              }
+            }}
+            className="p-1 hover:text-white hover:bg-white/[0.08] rounded transition-colors cursor-pointer"
             title="Open Discussion in Separate Page"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          </span>
         </div>
-      </div>
+      </Link>
     );
   }
 
   // Full Card View Mode
   return (
-    <article className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col border border-white/[0.07] hover:border-white/20 transition-all relative shadow-lg group">
-      
+    <Link
+      to={`/post/${post.id}`}
+      className="glass-card rounded-2xl p-4 sm:p-5 flex flex-col border border-white/[0.07] hover:border-white/20 transition-all relative shadow-lg group block cursor-pointer text-left no-underline"
+    >
       {/* Header Metadata */}
       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap text-xs">
         <div className="flex items-center gap-2 flex-wrap">
@@ -100,13 +117,31 @@ export const PostCard = ({ post }) => {
             {post.channelName}
           </span>
           <div className="flex items-center gap-1.5 text-slate-400">
-            <Link
-              to={`/user/${encodeURIComponent(post.author.handle || post.author.name)}`}
-              className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors"
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate(`/user/${encodeURIComponent(post.author.handle || post.author.name)}`);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate(`/user/${encodeURIComponent(post.author.handle || post.author.name)}`);
+                }
+              }}
+              className="flex items-center gap-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer"
             >
-              <img src={post.author.avatar} alt={post.author.name} className="w-5 h-5 rounded-md object-cover ring-1 ring-white/10" />
+              <img
+                src={post.author?.avatar || DEFAULT_AVATAR}
+                onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+                alt={post.author?.name || 'User'}
+                className="w-5 h-5 rounded-md object-cover ring-1 ring-white/10"
+              />
               <span className="font-semibold hover:underline text-slate-200">{post.author.name}</span>
-            </Link>
+            </span>
             <span className="text-[9px] px-1.5 py-0.2 rounded-md border bg-slate-950/70 text-slate-400 border-white/[0.07] font-mono">
               {post.author.badge}
             </span>
@@ -116,48 +151,75 @@ export const PostCard = ({ post }) => {
         </div>
 
         <div className="flex items-center gap-1">
-          <button
+          <span
+            role="button"
+            tabIndex={0}
             onClick={copyPostUrl}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-colors haptic-btn"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                copyPostUrl(e);
+              }
+            }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/[0.06] transition-colors haptic-btn cursor-pointer"
             title={copied ? 'Link Copied!' : 'Copy Discussion Link'}
           >
             {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4" />}
-          </button>
+          </span>
 
-          <a
-            href={`/post/${post.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] transition-colors flex items-center gap-1 text-[11px] font-medium haptic-btn"
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              window.open(`/post/${post.id}`, '_blank');
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(`/post/${post.id}`, '_blank');
+              }
+            }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] transition-colors flex items-center gap-1 text-[11px] font-medium haptic-btn cursor-pointer"
             title="Open Discussion in Separate Page"
           >
             <ExternalLink className="w-4 h-4" />
-          </a>
+          </span>
 
-          <button
-            onClick={() => toggleBookmark(post.id)}
-            className={`p-1.5 rounded-lg transition-colors haptic-btn ${
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              toggleBookmark(post.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleBookmark(post.id);
+              }
+            }}
+            className={`p-1.5 rounded-lg transition-colors haptic-btn cursor-pointer ${
               isSaved ? 'text-rose-400 bg-rose-500/10 border border-rose-500/20' : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.06]'
             }`}
             title={isSaved ? 'Remove Bookmark' : 'Bookmark Discussion'}
           >
             <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-rose-400' : ''}`} />
-          </button>
+          </span>
         </div>
       </div>
 
       {/* Title */}
       <h2 className="text-base sm:text-lg font-bold text-slate-100 group-hover:text-rose-200 transition-colors leading-snug mb-2 tracking-tight">
-        <Link to={`/post/${post.id}`} className="hover:underline">
-          {post.title}
-        </Link>
+        {post.title}
       </h2>
 
       {/* Content Snippet */}
-      <p
-        onClick={() => setSelectedPost(post)}
-        className="text-xs sm:text-sm text-slate-300/85 line-clamp-3 leading-relaxed mb-3.5 cursor-pointer whitespace-pre-line"
-      >
+      <p className="text-xs sm:text-sm text-slate-300/85 line-clamp-3 leading-relaxed mb-3.5 whitespace-pre-line">
         {post.content}
       </p>
 
@@ -178,13 +240,10 @@ export const PostCard = ({ post }) => {
 
         {/* Actions Bar: Comment Count & Views */}
         <div className="flex items-center gap-3 text-xs font-medium text-slate-300">
-          <Link
-            to={`/post/${post.id}`}
-            className="flex items-center gap-1.5 bg-slate-950/70 hover:bg-rose-950/40 text-slate-200 hover:text-white border border-white/[0.08] hover:border-rose-500/30 px-2.5 py-1 rounded-lg transition-all haptic-btn font-mono text-[11px]"
-          >
+          <div className="flex items-center gap-1.5 bg-slate-950/70 group-hover:bg-rose-950/40 text-slate-200 group-hover:text-white border border-white/[0.08] group-hover:border-rose-500/30 px-2.5 py-1 rounded-lg transition-all haptic-btn font-mono text-[11px]">
             <MessageSquare className="w-3.5 h-3.5 text-rose-400" />
             <span>{post.commentCount} Comments</span>
-          </Link>
+          </div>
 
           <div className="flex items-center gap-1 text-slate-400 font-mono text-[11px]">
             <Eye className="w-3.5 h-3.5 text-slate-500" />
@@ -192,7 +251,6 @@ export const PostCard = ({ post }) => {
           </div>
         </div>
       </div>
-
-    </article>
+    </Link>
   );
 };

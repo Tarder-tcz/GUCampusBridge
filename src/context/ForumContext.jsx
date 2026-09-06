@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { INITIAL_POSTS, GU_CHANNELS, GU_TAGS, GUEST_USER, CURRENT_USER, UPCOMING_EVENTS } from '../data/mockData';
+import { INITIAL_POSTS, GU_CHANNELS, GU_TAGS, GUEST_USER, CURRENT_USER, UPCOMING_EVENTS, DEFAULT_AVATAR } from '../data/mockData';
 import { api } from '../services/api';
 
 const ForumContext = createContext();
@@ -197,7 +197,7 @@ export const ForumProvider = ({ children }) => {
         role: userState.role,
         badge: userState.badge,
         badgeColor: userState.badgeColor,
-        avatar: userState.avatar,
+        avatar: userState.avatar || DEFAULT_AVATAR,
       },
       content: commentText,
       createdAt: 'Just now',

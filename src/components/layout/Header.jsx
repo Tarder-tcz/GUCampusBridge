@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useForum } from '../../context/ForumContext';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import { SidebarContent } from './Sidebar';
 import {
   Search,
@@ -243,7 +244,8 @@ export const Header = () => {
                     aria-expanded={isProfileMenuOpen}
                   >
                     <img
-                      src={userState.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                      src={userState.avatar || DEFAULT_AVATAR}
+                      onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
                       alt={userState.name}
                       className="w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-xl object-cover border border-white/15 shadow-sm"
                     />

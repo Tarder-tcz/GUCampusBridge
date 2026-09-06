@@ -21,11 +21,13 @@ export const GU_TAGS = [
   { id: 'hostel-query', name: 'Hostel & Transport' },
 ];
 
+export const DEFAULT_AVATAR = 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
+
 export const GUEST_USER = {
   id: 'usr_guest',
   name: 'Guest Visitor',
   handle: '@guest_user',
-  avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+  avatar: DEFAULT_AVATAR,
   role: 'Campus Visitor',
   badge: 'Guest',
   department: 'Galgotias University',
