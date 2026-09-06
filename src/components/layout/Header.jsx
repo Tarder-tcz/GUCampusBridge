@@ -101,9 +101,13 @@ export const Header = () => {
                 to="/"
                 className="flex items-center gap-2.5 cursor-pointer group select-none"
               >
-                {/* Crest Monogram Icon */}
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-rose-600 via-rose-700 to-slate-900 border border-rose-400/30 flex items-center justify-center shadow-md shadow-rose-950/50 group-hover:scale-105 group-hover:border-rose-400/50 transition-all">
-                  <span className="font-extrabold text-xs sm:text-sm tracking-wider text-white font-mono">GU</span>
+                {/* Galgotias University Official Logo */}
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white p-1 border border-white/20 flex items-center justify-center shadow-md shadow-rose-950/40 group-hover:scale-105 transition-transform overflow-hidden shrink-0">
+                  <img
+                    src="/galgotias-logo.png"
+                    alt="Galgotias University"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
