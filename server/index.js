@@ -16,6 +16,7 @@ const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'GU_CAMPUS_BRIDGE_SECRET_KEY_2026';
+const DEFAULT_AVATAR = 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
 
 // Auto-initialize SQLite database schema and default records on boot
 try {
@@ -194,7 +195,7 @@ app.post('/api/auth/signup', async (req, res) => {
     // Generated handle if not provided
     const userHandle = handle || `@${name.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(100 + Math.random() * 900)}`;
     const hashedPassword = bcrypt.hashSync(password, 10);
-    const userAvatar = avatar || `https://images.unsplash.com/photo-${1534528741775 + Math.floor(Math.random() * 1000)}?w=150&auto=format&fit=crop&q=80`;
+    const userAvatar = avatar || DEFAULT_AVATAR;
 
     const newUser = await prisma.user.create({
       data: {
@@ -515,7 +516,7 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
         authorHandle: user?.handle || '@aryan_scse24',
         authorRole: user?.role || 'SCSE 3rd Year',
         authorBadge: user?.badge || 'SCSE Senior',
-        authorAvatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        authorAvatar: user?.avatar || DEFAULT_AVATAR,
         createdAt: new Date().toISOString(),
         votes: 1,
         commentCount: 0,
@@ -670,7 +671,7 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
         authorHandle: user?.handle || '@aryan_scse24',
         authorRole: user?.role || 'SCSE 3rd Year',
         authorBadge: user?.badge || 'SCSE Senior',
-        authorAvatar: user?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        authorAvatar: user?.avatar || DEFAULT_AVATAR,
         createdAt: new Date().toISOString(),
         votes: 1,
         isSolution: false

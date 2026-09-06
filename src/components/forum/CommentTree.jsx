@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForum } from '../../context/ForumContext';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import { CommentItem } from './CommentItem';
 import { MessageSquare, Send, Sparkles, Lock } from 'lucide-react';
 
@@ -67,7 +68,8 @@ export const CommentTree = ({ post }) => {
         <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
           <div className="flex gap-3">
             <img
-              src={userState.avatar}
+              src={userState.avatar || DEFAULT_AVATAR}
+              onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
               alt={userState.name}
               className="w-9 h-9 rounded-xl object-cover ring-1 ring-white/15 shadow-sm shrink-0"
             />

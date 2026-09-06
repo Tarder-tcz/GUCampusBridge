@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForum } from '../../context/ForumContext';
 import { api } from '../../services/api';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import {
   X,
   UserCheck,
@@ -336,7 +337,8 @@ export const MentorConnectModal = () => {
                         }`}
                       >
                         <img
-                          src={mentor.avatar}
+                          src={mentor.avatar || DEFAULT_AVATAR}
+                          onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
                           alt={mentor.name}
                           className="w-12 h-12 rounded-2xl object-cover border border-slate-700 shrink-0"
                         />
@@ -409,7 +411,8 @@ export const MentorConnectModal = () => {
                 {/* Selected Mentor Card */}
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800">
                   <img
-                    src={selectedMentor.avatar}
+                    src={selectedMentor.avatar || DEFAULT_AVATAR}
+                    onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
                     alt={selectedMentor.name}
                     className="w-10 h-10 rounded-xl object-cover border border-slate-700"
                   />

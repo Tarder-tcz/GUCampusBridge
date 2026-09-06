@@ -1,5 +1,6 @@
 import React from 'react';
 import { useForum } from '../../context/ForumContext';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import { formatTimeAgo } from '../../utils/timeAgo';
 import { CommentTree } from './CommentTree';
 import {
@@ -35,8 +36,9 @@ export const PostDetail = ({ post }) => {
         <div className="flex items-center justify-between gap-3 mb-5 flex-wrap pb-4 border-b border-white/[0.07] relative z-10">
           <div className="flex items-center gap-3">
             <img
-              src={post.author.avatar}
-              alt={post.author.name}
+              src={post.author?.avatar || DEFAULT_AVATAR}
+              onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+              alt={post.author?.name || 'User'}
               className="w-11 h-11 rounded-xl object-cover ring-2 ring-white/10 shadow-md"
             />
             <div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useForum } from '../context/ForumContext';
+import { DEFAULT_AVATAR } from '../data/mockData';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { RightPanel } from '../components/layout/RightPanel';
@@ -40,7 +41,7 @@ export const UserPage = () => {
   const DEFAULT_USER = {
     name: 'Galgotias Contributor',
     handle: '@campus_user',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    avatar: DEFAULT_AVATAR,
     role: 'Student Member',
     badge: 'GU Member',
     department: 'School of Computer Science & Engineering',
@@ -130,7 +131,8 @@ export const UserPage = () => {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative z-10">
                   <div className="flex items-center gap-4">
                     <img
-                      src={displayedUser.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                      src={displayedUser.avatar || DEFAULT_AVATAR}
+                      onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
                       alt={displayedUser.name}
                       className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-slate-700 shadow-lg shrink-0"
                     />

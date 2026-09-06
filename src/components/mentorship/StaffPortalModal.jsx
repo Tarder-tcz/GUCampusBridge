@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForum } from '../../context/ForumContext';
 import { api } from '../../services/api';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import {
   X,
   ShieldCheck,
@@ -225,7 +226,8 @@ export const StaffPortalModal = () => {
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                   <img
-                    src={staffUser.avatar}
+                    src={staffUser.avatar || DEFAULT_AVATAR}
+                    onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
                     alt={staffUser.name}
                     className="w-12 h-12 rounded-2xl object-cover border border-slate-700 shrink-0"
                   />

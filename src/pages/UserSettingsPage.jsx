@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForum } from '../context/ForumContext';
+import { DEFAULT_AVATAR } from '../data/mockData';
 import { Header } from '../components/layout/Header';
 import { Sidebar } from '../components/layout/Sidebar';
 import { RightPanel } from '../components/layout/RightPanel';
@@ -130,7 +131,8 @@ export const UserSettingsPage = () => {
               {/* Avatar Image Input with Live Preview */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-slate-950/50 p-4 sm:p-5 rounded-2xl border border-white/[0.07] shadow-inner">
                 <img
-                  src={avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                  src={avatar || DEFAULT_AVATAR}
+                  onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
                   alt={name}
                   className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl object-cover ring-2 ring-rose-500/30 shadow-lg shrink-0"
                 />
@@ -146,7 +148,7 @@ export const UserSettingsPage = () => {
                     placeholder="https://images.unsplash.com/..."
                     className="w-full bg-slate-900/90 border border-white/[0.08] hover:border-white/15 focus:border-rose-500/40 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:ring-4 focus:ring-rose-500/10 font-mono transition-all"
                   />
-                  <p className="text-[10px] text-slate-500">Provide an image link for your profile picture avatar.</p>
+                  <p className="text-[10px] text-slate-500">Provide an image link for your profile picture avatar. Sorry we can't afford picture uploads for now :(.</p>
                 </div>
               </div>
 

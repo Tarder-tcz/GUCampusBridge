@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useForum } from '../../context/ForumContext';
+import { DEFAULT_AVATAR } from '../../data/mockData';
 import { X, LogIn, UserPlus, Shield, User, Mail, Lock, Building, Sparkles, CheckCircle, AlertCircle } from 'lucide-react';
 
 export const AuthModal = () => {
@@ -60,7 +61,8 @@ export const AuthModal = () => {
           name,
           department,
           role,
-          bio: bio || 'Galgotias University Campus Member'
+          bio: bio || 'Galgotias University Campus Member',
+          avatar: avatar || DEFAULT_AVATAR
         });
         setSuccess('Account created successfully!');
         setTimeout(handleClose, 800);
@@ -70,7 +72,7 @@ export const AuthModal = () => {
           department: department || userState.department,
           role: role || userState.role,
           bio: bio || userState.bio,
-          avatar: avatar || userState.avatar
+          avatar: avatar || userState.avatar || DEFAULT_AVATAR
         });
         setSuccess('Profile updated successfully!');
         setTimeout(handleClose, 800);
