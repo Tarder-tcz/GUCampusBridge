@@ -1450,14 +1450,14 @@ app.post('/api/mentorship-requests', async (req, res) => {
   }
 });
 
-// POST /api/staff/login - Staff / Faculty Mentor Login using email or special tag and password
+// POST /api/staff/login - Faculty Mentor Login using email and password
 app.post('/api/staff/login', async (req, res) => {
   try {
-    const { specialTag, email, password } = req.body;
-    const identifier = (specialTag || email || '').trim();
+    const { email, password, specialTag } = req.body;
+    const identifier = (email || specialTag || '').trim();
 
     if (!identifier || !password) {
-      return res.status(400).json({ error: 'Email/Special Tag and Password are required' });
+      return res.status(400).json({ error: 'Faculty Email and Password are required' });
     }
 
     const staff = await prisma.user.findFirst({
@@ -1471,12 +1471,12 @@ app.post('/api/staff/login', async (req, res) => {
     });
 
     if (!staff) {
-      return res.status(401).json({ error: 'Invalid Faculty Credentials or Account Not Found' });
+      return res.status(401).json({ error: 'Invalid Faculty Email or Password' });
     }
 
     const isMatch = bcrypt.compareSync(password, staff.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid Password' });
+      return res.status(401).json({ error: 'Invalid Faculty Email or Password' });
     }
 
     const token = jwt.sign(

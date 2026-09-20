@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Lock,
   Key,
-  Tag,
+  Mail,
   CheckCircle2,
   XCircle,
   MessageSquare,
@@ -27,7 +27,7 @@ export const StaffPortalModal = () => {
   });
 
   // Login form state
-  const [specialTag, setSpecialTag] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
 
@@ -63,7 +63,7 @@ export const StaffPortalModal = () => {
     setLoginError('');
     setLoading(true);
     try {
-      const data = await api.staffLogin(specialTag, password);
+      const data = await api.staffLogin(email, password);
       if (data && data.token && data.staff) {
         setStaffToken(data.token);
         setStaffUser(data.staff);
@@ -71,7 +71,7 @@ export const StaffPortalModal = () => {
         localStorage.setItem('gucampusbridge_staff_user', JSON.stringify(data.staff));
       }
     } catch (err) {
-      setLoginError(err.message || 'Invalid Staff Special Tag or Password');
+      setLoginError(err.message || 'Invalid Faculty Email or Password');
     } finally {
       setLoading(false);
     }
@@ -131,10 +131,10 @@ export const StaffPortalModal = () => {
             <ShieldCheck className="w-5 h-5 text-amber-400" />
             <div>
               <h2 className="text-base font-bold text-slate-100">
-                Staff & Mentor Portal
+                Faculty & Staff Response Portal
               </h2>
               <p className="text-[11px] text-slate-400">
-                Faculty, Senior Mentors & Student Volunteers Dashboard
+                Manage and respond to student 1-on-1 mentorship requests
               </p>
             </div>
           </div>
@@ -158,7 +158,7 @@ export const StaffPortalModal = () => {
                 </div>
                 <h3 className="text-base font-bold text-slate-100">Faculty & Staff Login</h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Enter your admin-provided Special Tag and Password to manage student mentorship requests.
+                  Enter your registered Faculty Email ID and Password to manage student mentorship requests.
                 </p>
               </div>
 
@@ -171,15 +171,15 @@ export const StaffPortalModal = () => {
               <form onSubmit={handleStaffLogin} className="space-y-3 pt-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Special Staff Tag *
+                    Faculty Email Address *
                   </label>
                   <div className="relative flex items-center">
-                    <Tag className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
                     <input
-                      type="text"
-                      value={specialTag}
-                      onChange={(e) => setSpecialTag(e.target.value)}
-                      placeholder="e.g. PROF-SCSE-101 or VOL-SCSE-303"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="e.g. faculty@galgotias.edu"
                       className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-200 focus:outline-none"
                       required
                     />
@@ -188,7 +188,7 @@ export const StaffPortalModal = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Staff Password *
+                    Password *
                   </label>
                   <div className="relative flex items-center">
                     <Key className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
@@ -196,17 +196,11 @@ export const StaffPortalModal = () => {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter staff password"
+                      placeholder="Enter your password"
                       className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-200 focus:outline-none"
                       required
                     />
                   </div>
-                </div>
-
-                <div className="text-[10px] text-slate-400 bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-                  💡 <strong>Test Staff Credentials:</strong><br />
-                  • Special Tag: <code className="text-emerald-400">PROF-SCSE-101</code><br />
-                  • Password: <code className="text-emerald-400">StaffPassword123!</code>
                 </div>
 
                 <button
@@ -214,7 +208,7 @@ export const StaffPortalModal = () => {
                   disabled={loading}
                   className="w-full bg-slate-100 hover:bg-white text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
                 >
-                  {loading ? 'Authenticating...' : 'Sign In to Staff Portal'}
+                  {loading ? 'Authenticating...' : 'Sign In to Faculty Portal'}
                 </button>
               </form>
             </div>
@@ -235,7 +229,7 @@ export const StaffPortalModal = () => {
                     <div className="flex items-center gap-2">
                       <h3 className="font-bold text-sm text-slate-100">{staffUser.name}</h3>
                       <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                        {staffUser.specialTag}
+                        {staffUser.email || staffUser.badge || 'Faculty'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400">{staffUser.role} • {staffUser.department}</p>

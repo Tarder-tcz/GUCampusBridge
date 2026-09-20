@@ -158,16 +158,16 @@ export const api = {
     return data;
   },
 
-  async staffLogin(specialTag, password) {
+  async staffLogin(email, password) {
     const res = await fetch(`${API_BASE}/staff/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ specialTag, password }),
+      body: JSON.stringify({ email, password }),
     });
     const contentType = res.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Staff authentication failed');
+      if (!res.ok) throw new Error(data.error || 'Faculty authentication failed');
       return data;
     }
     throw new Error(`Backend server error (${res.status}). Please ensure Express backend is running on port 5000.`);
