@@ -134,11 +134,11 @@ export const SidebarContent = ({ onSelect }) => {
               <div className="font-bold text-white group-hover:text-amber-200 transition-colors flex items-center gap-1.5">
                 <span>Faculty Responses</span>
               </div>
-              <div className="text-[10px] text-slate-400 font-medium mt-0.5">Advice & Answers Archive</div>
+              <div className="text-[10px] text-slate-400 font-medium mt-0.5">Answers & Advice to Students</div>
             </div>
           </div>
           <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
-            Browse
+            Student Advice
           </span>
         </button>
 

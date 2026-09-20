@@ -31,16 +31,29 @@ export const FacultyResponsesModal = () => {
     setIsFacultyResponsesOpen,
     facultyBookmarks,
     toggleFacultyBookmark,
+    userState,
   } = useForum();
 
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'BOOKMARKED'
+  const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'MY_REPLIES' | 'BOOKMARKED'
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('ALL');
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' (newest first) | 'asc' (oldest first)
   const [copiedId, setCopiedId] = useState(null);
+
+  const currentStudentName = userState?.name?.trim()?.toLowerCase();
+  const isStudentUser = userState && userState.role === 'STUDENT';
+
+  // Count responses addressed specifically to the logged-in student
+  const myResponsesCount = useMemo(() => {
+    if (!currentStudentName) return 0;
+    return responses.filter(r => {
+      const sName = (r.studentName || '').toLowerCase();
+      return sName.includes(currentStudentName) || currentStudentName.includes(sName);
+    }).length;
+  }, [responses, currentStudentName]);
 
   // Fetch all faculty responses on open
   useEffect(() => {
@@ -85,8 +98,15 @@ export const FacultyResponsesModal = () => {
   const filteredResponses = useMemo(() => {
     let list = [...responses];
 
-    // 1. Tab filter: All vs Bookmarked
-    if (activeTab === 'BOOKMARKED') {
+    // 1. Tab filter: All vs My Replies vs Bookmarked
+    if (activeTab === 'MY_REPLIES') {
+      if (currentStudentName) {
+        list = list.filter(r => {
+          const sName = (r.studentName || '').toLowerCase();
+          return sName.includes(currentStudentName) || currentStudentName.includes(sName);
+        });
+      }
+    } else if (activeTab === 'BOOKMARKED') {
       list = list.filter(r => facultyBookmarks.includes(r.id));
     }
 
@@ -119,7 +139,7 @@ export const FacultyResponsesModal = () => {
     });
 
     return list;
-  }, [responses, activeTab, selectedDepartment, searchQuery, sortOrder, facultyBookmarks]);
+  }, [responses, activeTab, selectedDepartment, searchQuery, sortOrder, facultyBookmarks, currentStudentName]);
 
   const bookmarkedCount = useMemo(() => {
     return responses.filter(r => facultyBookmarks.includes(r.id)).length;
@@ -155,7 +175,7 @@ export const FacultyResponsesModal = () => {
                   Faculty Academic & Advisory Responses
                 </h2>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold">
-                  Official Resolutions
+                  Student Advisory Archive
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
@@ -179,8 +199,8 @@ export const FacultyResponsesModal = () => {
           {/* Top Row: Tabs & Sort Order Toggle */}
           <div className="flex items-center justify-between gap-3 flex-wrap">
             
-            {/* Tabs: All Responses vs Bookmarked */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-white/10 shadow-inner">
+            {/* Tabs: All Responses vs Replies to Me vs Bookmarked */}
+            <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-white/10 shadow-inner flex-wrap">
               <button
                 onClick={() => setActiveTab('ALL')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
@@ -196,6 +216,26 @@ export const FacultyResponsesModal = () => {
                   {responses.length}
                 </span>
               </button>
+
+              {/* Replies to Me Tab (For Logged In Students) */}
+              {isStudentUser && (
+                <button
+                  onClick={() => setActiveTab('MY_REPLIES')}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
+                    activeTab === 'MY_REPLIES'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-md font-bold'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Replies to Me</span>
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                    activeTab === 'MY_REPLIES' ? 'bg-slate-950/20 text-slate-950' : 'bg-emerald-500/20 text-emerald-300'
+                  }`}>
+                    {myResponsesCount}
+                  </span>
+                </button>
+              )}
 
               <button
                 onClick={() => setActiveTab('BOOKMARKED')}
@@ -300,6 +340,8 @@ export const FacultyResponsesModal = () => {
               <h3 className="text-sm sm:text-base font-bold text-white">
                 {activeTab === 'BOOKMARKED'
                   ? 'No Bookmarked Responses Yet'
+                  : activeTab === 'MY_REPLIES'
+                  ? 'No Faculty Replies to Your Queries Yet'
                   : responses.length === 0
                   ? 'No Faculty Responses Recorded Yet'
                   : 'No Matching Faculty Responses'}
@@ -307,6 +349,8 @@ export const FacultyResponsesModal = () => {
               <p className="text-xs text-slate-400 leading-relaxed">
                 {activeTab === 'BOOKMARKED'
                   ? 'Click the bookmark icon on any faculty advice card to tag and save it in this tab for quick revision.'
+                  : activeTab === 'MY_REPLIES'
+                  ? 'Responses to your 1-on-1 mentorship requests will appear here once your mentor replies. You can also explore all verified faculty advice across campus.'
                   : responses.length === 0
                   ? 'Official faculty resolutions and advisory answers will appear here in real time as professors and mentors respond to student requests.'
                   : 'Try clearing your search terms or selecting "All Departments" to see available responses.'}
@@ -318,6 +362,24 @@ export const FacultyResponsesModal = () => {
                 >
                   Browse All Faculty Responses
                 </button>
+              ) : activeTab === 'MY_REPLIES' ? (
+                <div className="flex items-center justify-center gap-2.5 pt-1 flex-wrap">
+                  <button
+                    onClick={() => setActiveTab('ALL')}
+                    className="bg-slate-900 hover:bg-slate-800 border border-white/10 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl transition-all cursor-pointer"
+                  >
+                    Browse All Responses
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsFacultyResponsesOpen(false);
+                      navigate('/mentor-connect');
+                    }}
+                    className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-md transition-all cursor-pointer"
+                  >
+                    Ask a Faculty Mentor
+                  </button>
+                </div>
               ) : responses.length === 0 ? (
                 <button
                   onClick={() => {

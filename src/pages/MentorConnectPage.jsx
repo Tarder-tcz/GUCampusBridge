@@ -34,7 +34,8 @@ import {
   Calendar,
   Layers,
   HelpCircle,
-  Briefcase
+  Briefcase,
+  MessageSquareQuote
 } from 'lucide-react';
 
 const DEPARTMENTS = [
@@ -51,7 +52,7 @@ const DEPARTMENTS = [
 
 
 export const MentorConnectPage = () => {
-  const { userState } = useForum();
+  const { userState, setIsFacultyResponsesOpen } = useForum();
   const navigate = useNavigate();
 
   // Step state: 1 (Student details), 2 (Mentor selection), 3 (Review), 4 (Success confirmation)
@@ -258,7 +259,15 @@ export const MentorConnectPage = () => {
               <span>Back to Campus Feed</span>
             </Link>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => setIsFacultyResponsesOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/30 hover:border-amber-500/50 text-amber-300 hover:text-amber-200 text-xs font-semibold transition-all cursor-pointer haptic-btn"
+                title="View verified advice and answers given by faculty"
+              >
+                <MessageSquareQuote className="w-3.5 h-3.5 text-amber-400" />
+                <span>Faculty Responses Archive</span>
+              </button>
               <span className="flex items-center gap-1.5 text-[11px] font-mono font-medium px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/25">
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                 <span>Verified Faculty Advisory</span>
@@ -1096,6 +1105,14 @@ export const MentorConnectPage = () => {
 
               {/* Action Buttons */}
               <div className="flex items-center justify-center gap-3.5 pt-4 flex-wrap">
+                <button
+                  onClick={() => setIsFacultyResponsesOpen(true)}
+                  className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-bold px-5 py-2.5 rounded-xl text-xs shadow-lg shadow-amber-950/40 border border-amber-400/30 transition-all cursor-pointer haptic-btn flex items-center gap-2"
+                >
+                  <MessageSquareQuote className="w-4 h-4" />
+                  <span>Check Faculty Responses</span>
+                </button>
+
                 <Link
                   to="/"
                   className="bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold px-6 py-2.5 rounded-xl text-xs shadow-lg shadow-rose-950/40 border border-rose-400/30 transition-all cursor-pointer haptic-btn"
