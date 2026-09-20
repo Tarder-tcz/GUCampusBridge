@@ -318,6 +318,9 @@ export const ForumProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const data = await api.login({ email, password });
+    if (data && data.mfaRequired) {
+      return data;
+    }
     if (data && data.token) {
       setToken(data.token);
       localStorage.setItem('gucampusbridge_token', data.token);
@@ -326,6 +329,31 @@ export const ForumProvider = ({ children }) => {
       setUserState(data.user);
     }
     return data;
+  };
+
+  const verifyMfaChallenge = async (tempToken, code) => {
+    const data = await api.challengeMfa(tempToken, code);
+    if (data && data.token) {
+      setToken(data.token);
+      localStorage.setItem('gucampusbridge_token', data.token);
+    }
+    if (data && data.user) {
+      setUserState(data.user);
+    }
+    return data;
+  };
+
+  // RBAC Privileges Computation
+  const currentRole = userState?.role || 'STUDENT';
+  const isAuthenticated = !!token && !userState?.isGuest;
+  const isAdmin = isAuthenticated && currentRole === 'ADMIN';
+  const isFaculty = isAuthenticated && (currentRole === 'FACULTY' || currentRole === 'ADMIN');
+  const isStudent = isAuthenticated && currentRole === 'STUDENT';
+
+  const hasRole = (allowedRoles = []) => {
+    if (!isAuthenticated) return false;
+    if (typeof allowedRoles === 'string') return currentRole === allowedRoles;
+    return Array.isArray(allowedRoles) && allowedRoles.includes(currentRole);
   };
 
   const signup = async (signupData) => {
@@ -360,6 +388,7 @@ export const ForumProvider = ({ children }) => {
       value={{
         posts: filteredPosts,
         rawPosts: posts,
+        allPosts: posts,
         channels,
         tags,
         events,
@@ -388,11 +417,19 @@ export const ForumProvider = ({ children }) => {
         authModalMode,
         setAuthModalMode,
         token,
+        setToken,
+        userRole: currentRole,
+        isAdmin,
+        isFaculty,
+        isStudent,
+        hasRole,
+        verifyMfaChallenge,
         login,
         signup,
         logout,
         updateProfile,
         userState,
+        setUserState,
         notifications,
         togglePostVote,
         toggleBookmark,

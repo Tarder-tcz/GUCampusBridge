@@ -175,6 +175,11 @@ const ForumMainContent = () => {
 
 import { UserPage } from './pages/UserPage';
 import { UserSettingsPage } from './pages/UserSettingsPage';
+import { MentorConnectPage } from './pages/MentorConnectPage';
+import { AdminDashboardPage } from './pages/AdminDashboardPage';
+import { ClaimInvitePage } from './pages/ClaimInvitePage';
+import { ForbiddenPage } from './pages/ForbiddenPage';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 export default function App() {
   return (
@@ -186,6 +191,17 @@ export default function App() {
           <Route path="/user/:userId" element={<UserPage />} />
           <Route path="/user/me" element={<UserPage />} />
           <Route path="/settings" element={<UserSettingsPage />} />
+          <Route path="/mentor-connect" element={<MentorConnectPage />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/claim-invite" element={<ClaimInvitePage />} />
+          <Route path="/403" element={<ForbiddenPage />} />
         </Routes>
       </ForumProvider>
     </BrowserRouter>

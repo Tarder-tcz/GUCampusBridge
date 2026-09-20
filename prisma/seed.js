@@ -130,7 +130,68 @@ async function seed() {
     });
   }
 
-  console.log('Successfully completed safe database seeding without wiping user or post data!');
+  // Safe Upsert Seed Users across all RBAC tiers (ADMIN, FACULTY, STUDENT)
+  const SEED_USERS = [
+    {
+      email: 'admin@galgotias.edu',
+      password: bcrypt.hashSync('AdminSecret123!', 10),
+      name: 'System Superadmin',
+      handle: '@system_admin',
+      role: 'ADMIN',
+      badge: 'Super Admin',
+      headline: 'Central IT & Platform Superadmin',
+      department: 'Central Administration & IT',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      bio: 'Galgotias CampusBridge Central Security & System Administrator.',
+      karma: 9999
+    },
+    {
+      email: 'ananya.sharma@galgotias.edu',
+      password: bcrypt.hashSync('StaffPassword123!', 10),
+      name: 'Dr. Ananya Sharma',
+      handle: '@dr_ananya_ai',
+      role: 'FACULTY',
+      badge: 'Faculty Member',
+      headline: 'Professor of AI & Machine Learning',
+      department: 'School of Computer Science & Engineering (SCSE)',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+      bio: 'Professor of AI & Machine Learning. Guidance in research papers, capstone projects, and DSA.',
+      specialTag: 'PROF-SCSE-101',
+      karma: 2500
+    },
+    {
+      email: 'aryan@galgotias.edu',
+      password: bcrypt.hashSync('Password123!', 10),
+      name: 'Aryan Sharma',
+      handle: '@aryan_scse',
+      role: 'STUDENT',
+      badge: 'Student Contributor',
+      headline: 'B.Tech CSE 3rd Year (AI/ML)',
+      department: 'School of Computer Science & Engineering',
+      avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+      bio: 'B.Tech Computer Science student passionate about distributed systems and AI.',
+      karma: 340
+    }
+  ];
+
+  for (const u of SEED_USERS) {
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: {
+        role: u.role,
+        badge: u.badge,
+        headline: u.headline,
+        name: u.name,
+        department: u.department,
+        avatar: u.avatar,
+        bio: u.bio,
+        specialTag: u.specialTag || null
+      },
+      create: u
+    });
+  }
+
+  console.log('Successfully completed safe database seeding across STUDENT, FACULTY, and ADMIN tiers!');
 }
 
 seed()

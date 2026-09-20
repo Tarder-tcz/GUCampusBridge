@@ -190,6 +190,119 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to update request');
     return data;
+  },
+
+  // ==========================================
+  // RBAC, ADMIN ONBOARDING & AUDIT SERVICES
+  // ==========================================
+
+  async createAdminInvite(inviteData) {
+    const res = await fetch(`${API_BASE}/admin/invites`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(inviteData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to generate invitation');
+    return data;
+  },
+
+  async getAdminInvites() {
+    const res = await fetch(`${API_BASE}/admin/invites`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch invitations');
+    return data;
+  },
+
+  async revokeAdminInvite(inviteId) {
+    const res = await fetch(`${API_BASE}/admin/invites/${inviteId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to revoke invitation');
+    return data;
+  },
+
+  async verifyInviteToken(token) {
+    const res = await fetch(`${API_BASE}/invites/verify/${encodeURIComponent(token)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Invalid or expired invitation token');
+    return data;
+  },
+
+  async claimInvite(claimData) {
+    const res = await fetch(`${API_BASE}/invites/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(claimData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to activate invited account');
+    return data;
+  },
+
+  async getAuditLogs() {
+    const res = await fetch(`${API_BASE}/admin/audit-logs`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch audit logs');
+    return data;
+  },
+
+  async getAdminUsers() {
+    const res = await fetch(`${API_BASE}/admin/users`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch user directory');
+    return data;
+  },
+
+  async updateUserRole(userId, newRole, reason) {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ newRole, reason }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update user role');
+    return data;
+  },
+
+  async setupMfa() {
+    const res = await fetch(`${API_BASE}/auth/mfa/setup`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to initiate MFA setup');
+    return data;
+  },
+
+  async verifyMfa(code) {
+    const res = await fetch(`${API_BASE}/auth/mfa/verify`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ code }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Invalid verification code');
+    return data;
+  },
+
+  async challengeMfa(tempToken, code) {
+    const res = await fetch(`${API_BASE}/auth/mfa/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tempToken, code }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '2FA verification failed');
+    return data;
   }
 };
 

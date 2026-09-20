@@ -7,6 +7,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum Role {
+  STUDENT
+  FACULTY
+  ADMIN
+}
+
 model User {
   id                String    @id @default(uuid())
   email             String    @unique
@@ -14,11 +20,16 @@ model User {
   name              String
   handle            String    @unique
   avatar            String
-  role              String
-  badge             String
+  role              Role      @default(STUDENT)
+  headline          String?   @default("Galgotias Campus Member")
+  badge             String    @default("Student")
   department        String    @default("School of Computer Science & Engineering")
-  bio               String    @default("B.Tech Student @ Galgotias University")
+  bio               String    @default("Galgotias University Student")
   karma             Int       @default(100)
+  mfaEnabled        Boolean   @default(false)
+  mfaSecret         String?
+  specialTag        String?   @unique
+  invitedBy         String?
   upvotedPostIds    String    @default("[]")
   downvotedPostIds  String    @default("[]")
   upvotedCommentIds String    @default("[]")
@@ -124,5 +135,32 @@ model MentorshipRequest {
   replyMessage      String?
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+}
+
+model PendingInvitation {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  role          Role      @default(FACULTY)
+  department    String?
+  tokenHash     String    @unique
+  invitedBy     String
+  invitedByName String?
+  expiresAt     DateTime
+  isAccepted    Boolean   @default(false)
+  acceptedAt    DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  userEmail String?
+  userRole  String?
+  action    String
+  resource  String
+  ipAddress String?
+  userAgent String?
+  metadata  String?  @default("{}")
+  createdAt DateTime @default(now())
 }
 

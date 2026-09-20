@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForum } from '../../context/ForumContext';
 import {
   Sparkles,
@@ -12,6 +13,7 @@ import {
   Compass,
   UserCheck,
   ShieldCheck,
+  ShieldAlert,
   ChevronRight
 } from 'lucide-react';
 
@@ -26,6 +28,11 @@ const ICON_MAP = {
 };
 
 export const SidebarContent = ({ onSelect }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isMentorConnectActive = location.pathname === '/mentor-connect';
+  const isAdminActive = location.pathname === '/admin';
+
   const {
     channels,
     tags,
@@ -34,24 +41,67 @@ export const SidebarContent = ({ onSelect }) => {
     selectedTag,
     setSelectedTag,
     setIsMentorModalOpen,
-    setIsStaffPortalOpen
+    setIsStaffPortalOpen,
+    isAdmin
   } = useForum();
 
   return (
     <div className="glass-panel rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl divide-y divide-white/[0.06]">
       
-      {/* 0. 1-on-1 Mentor Connect & Staff Portal Feature Entry */}
+      {/* 0. 1-on-1 Mentor Connect, Staff Portal & Admin Entry */}
       <div className="p-3 bg-slate-950/40 space-y-2.5">
+        {/* Superadmin Exclusive Control Center */}
+        {isAdmin && (
+          <button
+            onClick={() => {
+              navigate('/admin');
+              if (onSelect) onSelect();
+            }}
+            className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${
+              isAdminActive
+                ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-rose-950/60 border-purple-500/70 shadow-lg shadow-purple-950/40 ring-1 ring-purple-500/50'
+                : 'bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 hover:to-purple-950/50 border-purple-500/40 hover:border-purple-400/60 shadow-md shadow-purple-950/20'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${
+                isAdminActive
+                  ? 'bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-500/50'
+                  : 'bg-purple-500/20 border-purple-500/40 text-purple-300'
+              }`}>
+                <ShieldAlert className="w-4 h-4" />
+              </div>
+              <div className="text-left leading-tight">
+                <div className="font-bold text-white group-hover:text-purple-200 transition-colors flex items-center gap-1.5">
+                  <span>Admin Control Center</span>
+                </div>
+                <div className="text-[10px] text-purple-300/80 font-mono mt-0.5">RBAC & Faculty Invites</div>
+              </div>
+            </div>
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 uppercase tracking-wide">
+              ADMIN
+            </span>
+          </button>
+        )}
+
         {/* Student 1-on-1 Mentor Connect Button */}
         <button
           onClick={() => {
-            setIsMentorModalOpen(true);
+            navigate('/mentor-connect');
             if (onSelect) onSelect();
           }}
-          className="w-full relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900/90 to-rose-950/40 hover:to-rose-900/50 text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border border-rose-500/30 hover:border-rose-500/50 shadow-md shadow-rose-950/20 transition-all cursor-pointer group haptic-btn"
+          className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${
+            isMentorConnectActive
+              ? 'bg-gradient-to-br from-rose-950/70 via-slate-900 to-rose-900/40 border-rose-500/70 shadow-lg shadow-rose-950/40 ring-1 ring-rose-500/40'
+              : 'bg-gradient-to-br from-slate-900 via-slate-900/90 to-rose-950/40 hover:to-rose-900/50 border-rose-500/30 hover:border-rose-500/50 shadow-md shadow-rose-950/20'
+          }`}
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 group-hover:scale-110 transition-transform">
+            <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${
+              isMentorConnectActive
+                ? 'bg-rose-500 text-white border-rose-400'
+                : 'bg-rose-500/20 border-rose-500/30 text-rose-400'
+            }`}>
               <UserCheck className="w-4 h-4" />
             </div>
             <div className="text-left leading-tight">
@@ -105,6 +155,7 @@ export const SidebarContent = ({ onSelect }) => {
                 onClick={() => {
                   setActiveChannel(ch.id);
                   setSelectedTag(null);
+                  if (location.pathname !== '/') navigate('/');
                   if (onSelect) onSelect();
                 }}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer group ${
@@ -139,6 +190,7 @@ export const SidebarContent = ({ onSelect }) => {
             <button
               onClick={() => {
                 setSelectedTag(null);
+                if (location.pathname !== '/') navigate('/');
                 if (onSelect) onSelect();
               }}
               className="text-[10px] text-rose-400 hover:text-rose-300 hover:underline cursor-pointer font-medium"
@@ -157,6 +209,7 @@ export const SidebarContent = ({ onSelect }) => {
                 key={tag.id}
                 onClick={() => {
                   setSelectedTag(isSelected ? null : tag.name);
+                  if (location.pathname !== '/') navigate('/');
                   if (onSelect) onSelect();
                 }}
                 className={`px-2 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${

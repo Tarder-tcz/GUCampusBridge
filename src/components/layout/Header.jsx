@@ -18,7 +18,8 @@ import {
   X,
   MoreVertical,
   LogIn,
-  UserPlus
+  UserPlus,
+  ShieldAlert
 } from 'lucide-react';
 
 export const Header = () => {
@@ -36,7 +37,8 @@ export const Header = () => {
     sortBy,
     setSortBy,
     setIsAuthModalOpen,
-    setAuthModalMode
+    setAuthModalMode,
+    isAdmin
   } = useForum();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -267,14 +269,37 @@ export const Header = () => {
                         <p className="text-xs font-semibold text-slate-200">{userState.name}</p>
                         <p className="text-[11px] text-slate-400 truncate">{userState.handle || '@campus_user'}</p>
                         <div className="mt-1.5 flex items-center gap-2 text-[10px]">
-                          <span className="bg-rose-500/10 text-rose-300 border border-rose-500/20 px-2 py-0.5 rounded-full font-medium">
-                            {userState.role || 'Student'}
+                          <span className={`px-2 py-0.5 rounded-full font-bold border uppercase tracking-wider ${
+                            userState.role === 'ADMIN'
+                              ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                              : userState.role === 'FACULTY'
+                              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                          }`}>
+                            {userState.role || 'STUDENT'}
                           </span>
                           <span className="text-slate-400 font-mono">{userState.karma} Karma</span>
                         </div>
                       </div>
 
                       <div className="space-y-0.5">
+                        {/* Admin Control Center (Only for ADMIN role) */}
+                        {isAdmin && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setIsProfileMenuOpen(false)}
+                            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-purple-300 hover:text-purple-200 bg-purple-950/40 hover:bg-purple-900/50 rounded-xl border border-purple-500/30 transition-all text-left cursor-pointer mb-1.5 shadow-sm"
+                          >
+                            <div className="flex items-center gap-2">
+                              <ShieldAlert className="w-4 h-4 text-purple-400" />
+                              <span>Admin Control Center</span>
+                            </div>
+                            <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-200">
+                              RBAC
+                            </span>
+                          </Link>
+                        )}
+
                         {/* Option 1: My Profile & Contributions Page */}
                         <Link
                           to="/user/me"

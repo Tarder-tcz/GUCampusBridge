@@ -8,6 +8,7 @@ import { RightPanel } from '../components/layout/RightPanel';
 import { CreatePostModal } from '../components/forum/CreatePostModal';
 import { NotificationDrawer } from '../components/notifications/NotificationDrawer';
 import { AuthModal } from '../components/auth/AuthModal';
+import { api } from '../services/api';
 import {
   User,
   Settings,
@@ -16,23 +17,74 @@ import {
   Building2,
   BadgeCheck,
   Sparkles,
-  Camera
+  Camera,
+  Shield,
+  ShieldCheck,
+  Key,
+  Lock,
+  Copy,
+  AlertTriangle
 } from 'lucide-react';
 
 export const UserSettingsPage = () => {
-  const { userState, updateProfile } = useForum();
+  const { userState, updateProfile, token } = useForum();
   const navigate = useNavigate();
 
   const [name, setName] = useState(userState.name || '');
   const [handle, setHandle] = useState(userState.handle || '');
   const [department, setDepartment] = useState(userState.department || 'School of Computer Science & Engineering');
-  const [role, setRole] = useState(userState.role || 'SCSE Student');
+  const [role, setRole] = useState(userState.headline || userState.role || 'SCSE Student');
   const [bio, setBio] = useState(userState.bio || '');
   const [avatar, setAvatar] = useState(userState.avatar || '');
+
+  // MFA Setup State
+  const [mfaEnabled, setMfaEnabled] = useState(userState.mfaEnabled || false);
+  const [isSettingUpMfa, setIsSettingUpMfa] = useState(false);
+  const [mfaSecret, setMfaSecret] = useState('');
+  const [mfaOtpauth, setMfaOtpauth] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaError, setMfaError] = useState('');
+  const [mfaSuccess, setMfaSuccess] = useState('');
+  const [copiedSecret, setCopiedSecret] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  const handleStartMfa = async () => {
+    setMfaError('');
+    setMfaSuccess('');
+    setMfaLoading(true);
+    try {
+      const res = await api.auth.setupMfa();
+      setMfaSecret(res.secret);
+      setMfaOtpauth(res.otpauthUrl);
+      setIsSettingUpMfa(true);
+    } catch (err) {
+      setMfaError(err.message || 'Failed to initiate MFA setup.');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleVerifyMfa = async (e) => {
+    e.preventDefault();
+    setMfaError('');
+    setMfaSuccess('');
+    setMfaLoading(true);
+    try {
+      await api.auth.verifyMfa(mfaCode.trim());
+      setMfaEnabled(true);
+      setIsSettingUpMfa(false);
+      setMfaSuccess('Multi-Factor Authentication (TOTP) successfully enabled on your account!');
+      setTimeout(() => setMfaSuccess(''), 5000);
+    } catch (err) {
+      setMfaError(err.message || 'Invalid 6-digit TOTP code. Please try again.');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -119,11 +171,168 @@ export const UserSettingsPage = () => {
               </div>
             )}
 
-            {errorMsg && (
-              <div className="p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs">
-                {errorMsg}
+            {/* RBAC Security & Institutional Tier Banner */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/60 border border-white/[0.08] relative overflow-hidden flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-inner">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center border shadow-md ${
+                  userState.role === 'ADMIN'
+                    ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
+                    : userState.role === 'FACULTY'
+                    ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                    : 'bg-rose-500/20 border-rose-500/40 text-rose-300'
+                }`}>
+                  {userState.role === 'ADMIN' ? (
+                    <ShieldAlert className="w-5 h-5 text-purple-400" />
+                  ) : userState.role === 'FACULTY' ? (
+                    <ShieldCheck className="w-5 h-5 text-amber-400" />
+                  ) : (
+                    <BadgeCheck className="w-5 h-5 text-rose-400" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white uppercase tracking-wider">Institutional Role Tier:</span>
+                    <span className={`text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full border uppercase ${
+                      userState.role === 'ADMIN'
+                        ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                        : userState.role === 'FACULTY'
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                    }`}>
+                      {userState.role || 'STUDENT'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5">
+                    <Lock className="w-3 h-3 text-slate-500" />
+                    <span>Protected by RBAC server authorization. Privileged roles require Superadmin invitation.</span>
+                  </p>
+                </div>
               </div>
-            )}
+
+              {userState.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  className="px-3 py-1.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 text-purple-200 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>Open Admin Center</span>
+                </Link>
+              )}
+            </div>
+
+            {/* Multi-Factor Authentication (MFA / TOTP) Card */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-slate-950/50 border border-white/[0.08] space-y-3">
+              <div className="flex items-start sm:items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <Key className="w-4 h-4 text-rose-400" />
+                  <span className="text-xs font-bold text-white tracking-tight">Two-Factor Authentication (RFC 6238 TOTP)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {mfaEnabled ? (
+                    <span className="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-mono font-bold flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      TOTP Active
+                    </span>
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-mono font-medium">
+                      Not Configured
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Protect your Galgotias campus account using time-based one-time passwords (TOTP) compatible with Google Authenticator, Microsoft Authenticator, or Authy.
+                {userState.role === 'ADMIN' && (
+                  <span className="text-purple-300 font-semibold block mt-1">
+                    Notice: Multi-Factor Authentication is enforced for all Administrative governance operations.
+                  </span>
+                )}
+              </p>
+
+              {mfaSuccess && (
+                <div className="p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>{mfaSuccess}</span>
+                </div>
+              )}
+
+              {mfaError && (
+                <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+                  <span>{mfaError}</span>
+                </div>
+              )}
+
+              {!mfaEnabled && !isSettingUpMfa && (
+                <button
+                  type="button"
+                  onClick={handleStartMfa}
+                  disabled={mfaLoading}
+                  className="bg-slate-900 hover:bg-slate-800 border border-white/10 hover:border-white/20 text-slate-200 text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-2 transition-all cursor-pointer haptic-btn"
+                >
+                  <Key className="w-3.5 h-3.5 text-rose-400" />
+                  <span>{mfaLoading ? 'Generating Key...' : 'Set Up Two-Factor Authentication'}</span>
+                </button>
+              )}
+
+              {/* MFA Setup Step */}
+              {isSettingUpMfa && (
+                <div className="p-4 rounded-xl bg-slate-900/90 border border-rose-500/30 space-y-3.5 mt-2 animate-in fade-in duration-200">
+                  <div className="text-xs font-semibold text-white">Step 1: Add Key to Authenticator App</div>
+                  <p className="text-xs text-slate-400">
+                    Open your Authenticator app (Google Authenticator, Authy, etc.) and choose "Add account" &gt; "Enter a setup key".
+                  </p>
+
+                  <div className="flex items-center gap-2 bg-slate-950 p-2.5 rounded-lg border border-white/10">
+                    <span className="text-slate-400 text-[11px] font-mono">Secret Key:</span>
+                    <code className="text-rose-300 font-mono text-xs font-bold select-all flex-1">{mfaSecret}</code>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(mfaSecret);
+                        setCopiedSecret(true);
+                        setTimeout(() => setCopiedSecret(false), 2000);
+                      }}
+                      className="p-1 text-slate-400 hover:text-white rounded hover:bg-white/10 cursor-pointer text-[10px] flex items-center gap-1 font-sans"
+                    >
+                      <Copy className="w-3 h-3" />
+                      <span>{copiedSecret ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleVerifyMfa} className="space-y-3 pt-2 border-t border-white/[0.08]">
+                    <div className="text-xs font-semibold text-white">Step 2: Enter the 6-Digit Code to Activate</div>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="text"
+                        maxLength="6"
+                        required
+                        value={mfaCode}
+                        onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, ''))}
+                        placeholder="000000"
+                        className="w-36 text-center tracking-widest bg-slate-950 border border-white/10 focus:border-rose-500 rounded-xl py-2 px-3 text-sm font-mono text-white focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+                      />
+                      <button
+                        type="submit"
+                        disabled={mfaLoading || mfaCode.length !== 6}
+                        className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white text-xs font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{mfaLoading ? 'Verifying...' : 'Verify & Enable'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsSettingUpMfa(false)}
+                        className="text-xs text-slate-400 hover:text-slate-200 px-2 py-1"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+            </div>
 
             {/* Profile Edit Form */}
             <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
@@ -197,16 +406,17 @@ export const UserSettingsPage = () => {
                   </select>
                 </div>
 
-                {/* Role / Year */}
+                {/* Academic Headline / Cohort */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Student Role / Batch</label>
+                  <label className="text-xs font-semibold text-slate-300">Academic Headline / Cohort</label>
                   <input
                     type="text"
                     value={role}
                     onChange={(e) => setRole(e.target.value)}
-                    placeholder="e.g. SCSE B.Tech 3rd Year"
+                    placeholder="e.g. SCSE B.Tech 3rd Year or Associate Professor"
                     className="w-full bg-slate-950/60 border border-white/[0.08] hover:border-white/15 focus:border-rose-500/40 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:ring-4 focus:ring-rose-500/10 transition-all"
                   />
+                  <p className="text-[10px] text-slate-500">Public tagline displayed on your discussion threads.</p>
                 </div>
 
               </div>

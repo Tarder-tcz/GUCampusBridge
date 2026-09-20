@@ -3,6 +3,7 @@ import cors from 'cors';
 import pkg from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,8 +22,6 @@ const DEFAULT_AVATAR = 'https://static.vecteezy.com/system/resources/thumbnails/
 // Auto-initialize SQLite database schema and default records on boot
 try {
   console.log('Ensuring database schema and seeds are initialized...');
-  execSync('npx prisma generate', { stdio: 'inherit' });
-  execSync('npx prisma db push --accept-data-loss', { stdio: 'inherit' });
   execSync('node prisma/seed.js', { stdio: 'inherit' });
 } catch (e) {
   console.warn('Database startup check notice:', e.message);
@@ -35,35 +34,118 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
-    message: '🚀 GUCampusBridge REST API Server is running!',
+    message: '🚀 GUCampusBridge RBAC Secured REST API Server is running!',
     endpoints: {
       posts: '/api/posts',
       channels: '/api/channels',
       tags: '/api/tags',
       events: '/api/events',
-      auth: '/api/auth/me'
+      auth: '/api/auth/me',
+      admin: '/api/admin/invites'
     }
   });
 });
 
-// Auth Token Verification Middleware
+/* ==========================================
+   RBAC MIDDLEWARE & AUDIT LOGGING
+   ========================================== */
+
+// Auth Token Verification Middleware: decodes token and sets req.user = { id, email, role }
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
-    req.userId = 'usr_me'; // Fallback for guest/demo operations
+    req.userId = 'usr_me'; // Guest identifier
+    req.user = null;
     return next();
   }
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err) {
+    if (err || !decoded) {
       req.userId = 'usr_me';
+      req.user = null;
     } else {
       req.userId = decoded.id;
+      req.user = {
+        id: decoded.id,
+        email: decoded.email,
+        role: decoded.role || 'STUDENT'
+      };
     }
     next();
   });
+}
+
+// Require valid authentication (No guest access)
+function requireAuth(req, res, next) {
+  if (!req.user || !req.user.id || req.user.id === 'usr_me') {
+    return res.status(401).json({ error: 'Authentication required. Please sign in.' });
+  }
+  next();
+}
+
+// Require explicit Role tier (STUDENT, FACULTY, ADMIN)
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user || !req.user.role) {
+      return res.status(401).json({ error: 'Authentication required. Please sign in.' });
+    }
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        error: `Forbidden: Access restricted to ${allowedRoles.join(' or ')} accounts.`,
+        currentRole: req.user.role,
+        requiredRoles: allowedRoles
+      });
+    }
+    next();
+  };
+}
+
+// Audit Logger helper: writes immutable records to AuditLog table
+async function createAuditLog({ userId, userEmail, userRole, action, resource, metadata = {}, req = null }) {
+  try {
+    const ipAddress = req ? (req.headers['x-forwarded-for'] || req.socket?.remoteAddress || null) : null;
+    const userAgent = req ? (req.headers['user-agent'] || null) : null;
+    await prisma.auditLog.create({
+      data: {
+        userId: userId || null,
+        userEmail: userEmail || null,
+        userRole: userRole || null,
+        action,
+        resource,
+        ipAddress: typeof ipAddress === 'string' ? ipAddress : null,
+        userAgent: typeof userAgent === 'string' ? userAgent.slice(0, 255) : null,
+        metadata: JSON.stringify(metadata)
+      }
+    });
+  } catch (err) {
+    console.warn('Failed to record audit log:', err.message);
+  }
+}
+
+// RFC 6238 TOTP Helpers using Node.js crypto
+function generateTOTP(secret, windowOffset = 0) {
+  const epoch = Math.floor(Date.now() / 1000);
+  const timeStep = 30;
+  const counter = Math.floor(epoch / timeStep) + windowOffset;
+  const buf = Buffer.alloc(8);
+  buf.writeBigInt64BE(BigInt(counter));
+  const key = Buffer.from(secret, 'hex');
+  const hmac = crypto.createHmac('sha1', key).update(buf).digest();
+  const offset = hmac[hmac.length - 1] & 0xf;
+  const code = ((hmac.readUInt32BE(offset) & 0x7fffffff) % 1000000).toString().padStart(6, '0');
+  return code;
+}
+
+function verifyTOTP(secret, inputCode) {
+  if (!secret || !inputCode) return false;
+  for (let offset = -1; offset <= 1; offset++) {
+    if (generateTOTP(secret, offset) === inputCode.trim()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Helper to format user response (excluding password hash)
@@ -74,11 +156,14 @@ function formatUser(user) {
     name: user.name,
     handle: user.handle,
     avatar: user.avatar,
-    role: user.role,
-    badge: user.badge,
+    role: user.role || 'STUDENT',
+    headline: user.headline || user.role || 'Student',
+    badge: user.badge || user.role || 'Student',
     department: user.department,
     bio: user.bio,
     karma: user.karma,
+    mfaEnabled: !!user.mfaEnabled,
+    specialTag: user.specialTag || null,
     upvotedPostIds: JSON.parse(user.upvotedPostIds || '[]'),
     downvotedPostIds: JSON.parse(user.downvotedPostIds || '[]'),
     upvotedCommentIds: JSON.parse(user.upvotedCommentIds || '[]'),
@@ -177,10 +262,10 @@ function formatPost(post) {
    AUTHENTICATION & PROFILING ENDPOINTS
    ========================================== */
 
-// POST /api/auth/signup - Register new account
+// POST /api/auth/signup - Register new student account (Public signup STRICTLY defaults to STUDENT)
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { email, password, name, handle, role, department, bio, avatar } = req.body;
+    const { email, password, name, handle, department, bio, avatar, headline } = req.body;
 
     if (!email || !password || !name) {
       return res.status(400).json({ error: 'Email, password, and name are required' });
@@ -192,7 +277,9 @@ app.post('/api/auth/signup', async (req, res) => {
       return res.status(400).json({ error: 'An account with this email already exists' });
     }
 
-    // Generated handle if not provided
+    // STRICT SECURITY RULE: Public sign-ups strictly default to STUDENT role.
+    // Privileged tiers (FACULTY, ADMIN) can never be self-assigned.
+    const userRole = 'STUDENT';
     const userHandle = handle || `@${name.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(100 + Math.random() * 900)}`;
     const hashedPassword = bcrypt.hashSync(password, 10);
     const userAvatar = avatar || DEFAULT_AVATAR;
@@ -204,7 +291,8 @@ app.post('/api/auth/signup', async (req, res) => {
         name,
         handle: userHandle,
         avatar: userAvatar,
-        role: role || 'SCSE B.Tech Student',
+        role: userRole,
+        headline: headline || 'Student Member',
         badge: 'GU Student',
         department: department || 'School of Computer Science & Engineering',
         bio: bio || 'Galgotias University Student',
@@ -212,10 +300,20 @@ app.post('/api/auth/signup', async (req, res) => {
       }
     });
 
-    const token = jwt.sign({ id: newUser.id, email: newUser.email }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    await createAuditLog({
+      userId: newUser.id,
+      userEmail: newUser.email,
+      userRole: newUser.role,
+      action: 'PUBLIC_STUDENT_SIGNUP',
+      resource: `user:${newUser.id}`,
+      metadata: { department: newUser.department },
+      req
+    });
 
     res.status(201).json({
-      message: 'Account created successfully',
+      message: 'Account created successfully (Student Tier)',
       token,
       user: formatUser(newUser)
     });
@@ -225,7 +323,7 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
-// POST /api/auth/login - Authenticate user
+// POST /api/auth/login - Authenticate user across all tiers (Student, Faculty, Admin)
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -241,10 +339,43 @@ app.post('/api/auth/login', async (req, res) => {
 
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
+      await createAuditLog({
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'FAILED_LOGIN_ATTEMPT',
+        resource: `user:${user.id}`,
+        metadata: { reason: 'invalid_password' },
+        req
+      });
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+    // Two-Factor Authentication Check for MFA-enabled accounts
+    if (user.mfaEnabled) {
+      const tempToken = jwt.sign(
+        { id: user.id, email: user.email, role: user.role, mfaPending: true },
+        JWT_SECRET,
+        { expiresIn: '10m' }
+      );
+      return res.json({
+        mfaRequired: true,
+        tempToken,
+        message: 'Two-Factor Authentication required. Please enter your 6-digit TOTP code.'
+      });
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    await createAuditLog({
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      action: 'LOGIN_SUCCESS',
+      resource: `user:${user.id}`,
+      metadata: { role: user.role },
+      req
+    });
 
     res.json({
       message: 'Login successful',
@@ -254,6 +385,133 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ error: 'Login failed' });
+  }
+});
+
+// POST /api/auth/mfa/challenge - Verify 2FA code during login
+app.post('/api/auth/mfa/challenge', async (req, res) => {
+  try {
+    const { tempToken, code } = req.body;
+    if (!tempToken || !code) {
+      return res.status(400).json({ error: 'tempToken and 6-digit verification code are required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(tempToken, JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ error: 'MFA session expired. Please log in again.' });
+    }
+
+    if (!decoded.mfaPending) {
+      return res.status(400).json({ error: 'Invalid MFA session' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+    if (!user || !user.mfaSecret) {
+      return res.status(400).json({ error: 'MFA is not configured for this account' });
+    }
+
+    const isValid = verifyTOTP(user.mfaSecret, code);
+    if (!isValid) {
+      await createAuditLog({
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'FAILED_MFA_CHALLENGE',
+        resource: `user:${user.id}`,
+        req
+      });
+      return res.status(401).json({ error: 'Invalid 2FA code. Please check your authenticator app.' });
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    await createAuditLog({
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      action: 'MFA_LOGIN_SUCCESS',
+      resource: `user:${user.id}`,
+      metadata: { role: user.role },
+      req
+    });
+
+    res.json({
+      message: 'Two-factor authentication verified',
+      token,
+      user: formatUser(user)
+    });
+  } catch (err) {
+    console.error('MFA challenge error:', err);
+    res.status(500).json({ error: 'MFA verification failed' });
+  }
+});
+
+// POST /api/auth/mfa/setup - Generate TOTP Secret (Protected)
+app.post('/api/auth/mfa/setup', authenticateToken, requireAuth, async (req, res) => {
+  try {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const secret = crypto.randomBytes(20).toString('hex');
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { mfaSecret: secret }
+    });
+
+    const uri = `otpauth://totp/Galgotias%20CampusBridge:${encodeURIComponent(user.email)}?secret=${secret}&issuer=Galgotias%20University`;
+
+    res.json({
+      secret,
+      uri,
+      backupCodes: [
+        crypto.randomBytes(3).toString('hex').toUpperCase(),
+        crypto.randomBytes(3).toString('hex').toUpperCase(),
+        crypto.randomBytes(3).toString('hex').toUpperCase()
+      ]
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to initiate MFA setup' });
+  }
+});
+
+// POST /api/auth/mfa/verify - Confirm and enable MFA on account
+app.post('/api/auth/mfa/verify', authenticateToken, requireAuth, async (req, res) => {
+  try {
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: 'Verification code required' });
+
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user || !user.mfaSecret) {
+      return res.status(400).json({ error: 'MFA setup has not been initiated' });
+    }
+
+    const isValid = verifyTOTP(user.mfaSecret, code);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { mfaEnabled: true }
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      action: 'MFA_ACTIVATED',
+      resource: `user:${user.id}`,
+      req
+    });
+
+    res.json({
+      message: 'MFA successfully enabled on your account',
+      user: formatUser(updated)
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to activate MFA' });
   }
 });
 
@@ -272,21 +530,31 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
   }
 });
 
-// PUT /api/auth/profile - Update user profile
-app.put('/api/auth/profile', authenticateToken, async (req, res) => {
+// PUT /api/auth/profile - Update user profile (Role CANNOT be changed self-service!)
+app.put('/api/auth/profile', authenticateToken, requireAuth, async (req, res) => {
   try {
-    const { name, handle, role, department, bio, avatar } = req.body;
+    const { name, handle, department, bio, avatar, headline } = req.body;
 
+    // Notice: role is deliberately ignored here to protect RBAC boundaries!
     const updatedUser = await prisma.user.update({
-      where: { id: req.userId },
+      where: { id: req.user.id },
       data: {
         ...(name && { name }),
         ...(handle && { handle }),
-        ...(role && { role }),
+        ...(headline && { headline }),
         ...(department && { department }),
         ...(bio && { bio }),
         ...(avatar && { avatar })
       }
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'PROFILE_UPDATED',
+      resource: `user:${req.user.id}`,
+      req
     });
 
     res.json({
@@ -296,6 +564,322 @@ app.put('/api/auth/profile', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('Profile update error:', err);
     res.status(500).json({ error: 'Failed to update user profile' });
+  }
+});
+
+/* =========================================================
+   ADMIN PRIVILEGED ONBOARDING & INVITE SYSTEM (RBAC)
+   ========================================================= */
+
+// POST /api/admin/invites - Issue time-limited cryptographic invite for Faculty or Admin
+app.post('/api/admin/invites', authenticateToken, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { email, role = 'FACULTY', department = 'School of Computer Science & Engineering' } = req.body;
+
+    if (!email || !email.includes('@')) {
+      return res.status(400).json({ error: 'A valid institutional email address is required' });
+    }
+
+    if (!['FACULTY', 'ADMIN'].includes(role)) {
+      return res.status(400).json({ error: 'Privileged role must be either FACULTY or ADMIN' });
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser && existingUser.role === role) {
+      return res.status(400).json({ error: `An active account with ${role} privileges already exists for ${email}` });
+    }
+
+    // Generate 32-byte cryptographically random raw token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    // Store SHA-256 hash in database
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 Days validity
+
+    const invitation = await prisma.pendingInvitation.upsert({
+      where: { email },
+      update: {
+        role,
+        department,
+        tokenHash,
+        invitedBy: req.user.id,
+        invitedByName: req.user.email,
+        expiresAt,
+        isAccepted: false,
+        acceptedAt: null
+      },
+      create: {
+        email,
+        role,
+        department,
+        tokenHash,
+        invitedBy: req.user.id,
+        invitedByName: req.user.email,
+        expiresAt
+      }
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: `INVITE_${role}_GENERATED`,
+      resource: `invitation:${invitation.id}`,
+      metadata: { targetEmail: email, role, department },
+      req
+    });
+
+    res.status(201).json({
+      message: `Privileged invitation generated for ${email} (${role})`,
+      invitation: {
+        id: invitation.id,
+        email: invitation.email,
+        role: invitation.role,
+        department: invitation.department,
+        expiresAt: invitation.expiresAt,
+        createdAt: invitation.createdAt
+      },
+      token: rawToken,
+      inviteUrl: `/claim-invite?token=${rawToken}`
+    });
+  } catch (err) {
+    console.error('Invite generation error:', err);
+    res.status(500).json({ error: 'Failed to generate invitation' });
+  }
+});
+
+// GET /api/admin/invites - List pending & accepted invitations (Admin only)
+app.get('/api/admin/invites', authenticateToken, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const invites = await prisma.pendingInvitation.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(invites);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch invitations' });
+  }
+});
+
+// DELETE /api/admin/invites/:id - Revoke pending invitation (Admin only)
+app.delete('/api/admin/invites/:id', authenticateToken, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deleted = await prisma.pendingInvitation.delete({ where: { id } });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'INVITE_REVOKED',
+      resource: `invitation:${id}`,
+      metadata: { email: deleted.email },
+      req
+    });
+
+    res.json({ message: 'Invitation revoked successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to revoke invitation' });
+  }
+});
+
+// GET /api/invites/verify/:token - Verify token before claiming (Public endpoint)
+app.get('/api/invites/verify/:token', async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ error: 'Token missing' });
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const invitation = await prisma.pendingInvitation.findUnique({ where: { tokenHash } });
+
+    if (!invitation) {
+      return res.status(404).json({ error: 'Invitation link is invalid or does not exist.' });
+    }
+
+    if (invitation.isAccepted) {
+      return res.status(400).json({ error: 'This invitation has already been claimed and activated.' });
+    }
+
+    if (new Date() > new Date(invitation.expiresAt)) {
+      return res.status(400).json({ error: 'This invitation link has expired. Please request a new invite from the university administrator.' });
+    }
+
+    res.json({
+      valid: true,
+      email: invitation.email,
+      role: invitation.role,
+      department: invitation.department,
+      expiresAt: invitation.expiresAt
+    });
+  } catch (err) {
+    console.error('Invite verification error:', err);
+    res.status(500).json({ error: 'Failed to verify invitation' });
+  }
+});
+
+// POST /api/invites/claim - Activate account with privileged role (Faculty/Admin)
+app.post('/api/invites/claim', async (req, res) => {
+  try {
+    const { token, name, password, handle, bio, avatar } = req.body;
+
+    if (!token || !name || !password) {
+      return res.status(400).json({ error: 'Token, name, and password are required' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const invitation = await prisma.pendingInvitation.findUnique({ where: { tokenHash } });
+
+    if (!invitation || invitation.isAccepted || new Date() > new Date(invitation.expiresAt)) {
+      return res.status(400).json({ error: 'Invalid or expired invitation token.' });
+    }
+
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const userHandle = handle || `@${name.toLowerCase().replace(/\s+/g, '_')}_${Math.floor(100 + Math.random() * 900)}`;
+
+    let user = await prisma.user.findUnique({ where: { email: invitation.email } });
+
+    if (user) {
+      // Elevate existing account to privileged role
+      user = await prisma.user.update({
+        where: { email: invitation.email },
+        data: {
+          name,
+          password: hashedPassword,
+          role: invitation.role,
+          badge: invitation.role === 'ADMIN' ? 'Super Admin' : 'Faculty Member',
+          headline: invitation.role === 'ADMIN' ? 'System Administrator' : `Faculty • ${invitation.department || 'Galgotias'}`,
+          department: invitation.department || user.department,
+          avatar: avatar || user.avatar,
+          bio: bio || user.bio
+        }
+      });
+    } else {
+      // Create new privileged user
+      user = await prisma.user.create({
+        data: {
+          email: invitation.email,
+          password: hashedPassword,
+          name,
+          handle: userHandle,
+          avatar: avatar || DEFAULT_AVATAR,
+          role: invitation.role,
+          badge: invitation.role === 'ADMIN' ? 'Super Admin' : 'Faculty Member',
+          headline: invitation.role === 'ADMIN' ? 'System Administrator' : `Faculty • ${invitation.department || 'Galgotias'}`,
+          department: invitation.department || 'School of Computer Science & Engineering',
+          bio: bio || `Galgotias University ${invitation.role === 'ADMIN' ? 'Administrator' : 'Faculty Member'}`,
+          karma: invitation.role === 'ADMIN' ? 5000 : 1500
+        }
+      });
+    }
+
+    // Mark invitation as claimed
+    await prisma.pendingInvitation.update({
+      where: { id: invitation.id },
+      data: {
+        isAccepted: true,
+        acceptedAt: new Date()
+      }
+    });
+
+    await createAuditLog({
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      action: `INVITE_${invitation.role}_CLAIMED`,
+      resource: `user:${user.id}`,
+      metadata: { invitationId: invitation.id },
+      req
+    });
+
+    const authToken = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      message: `Account activated successfully as ${invitation.role}!`,
+      token: authToken,
+      user: formatUser(user)
+    });
+  } catch (err) {
+    console.error('Invite claim error:', err);
+    res.status(500).json({ error: 'Failed to claim invitation' });
+  }
+});
+
+// GET /api/admin/audit-logs - Query immutable audit logs (Admin only)
+app.get('/api/admin/audit-logs', authenticateToken, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const logs = await prisma.auditLog.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 100
+    });
+    res.json(logs);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch audit logs' });
+  }
+});
+
+// GET /api/admin/users - Campus User Directory (Admin only)
+app.get('/api/admin/users', authenticateToken, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        handle: true,
+        avatar: true,
+        role: true,
+        headline: true,
+        badge: true,
+        department: true,
+        karma: true,
+        mfaEnabled: true,
+        createdAt: true
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch campus directory' });
+  }
+});
+
+// PUT /api/admin/users/:id/role - Alter user role with mandatory audit logging (Superadmin only)
+app.put('/api/admin/users/:id/role', authenticateToken, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newRole, reason = 'Administrative role reassignment' } = req.body;
+
+    if (!['STUDENT', 'FACULTY', 'ADMIN'].includes(newRole)) {
+      return res.status(400).json({ error: 'Invalid target role. Must be STUDENT, FACULTY, or ADMIN.' });
+    }
+
+    const targetUser = await prisma.user.findUnique({ where: { id } });
+    if (!targetUser) return res.status(404).json({ error: 'Target user not found' });
+
+    const previousRole = targetUser.role;
+    const updated = await prisma.user.update({
+      where: { id },
+      data: {
+        role: newRole,
+        badge: newRole === 'ADMIN' ? 'Super Admin' : newRole === 'FACULTY' ? 'Faculty Member' : 'Student'
+      }
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'ADMIN_ROLE_MODIFIED',
+      resource: `user:${id}`,
+      metadata: { targetEmail: targetUser.email, previousRole, newRole, reason },
+      req
+    });
+
+    res.json({
+      message: `User role updated from ${previousRole} to ${newRole}`,
+      user: formatUser(updated)
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update user role' });
   }
 });
 
