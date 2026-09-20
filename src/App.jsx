@@ -50,7 +50,7 @@ const ForumMainContent = () => {
       <Header />
 
       {/* Main App Layout Grid */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6 flex flex-col lg:flex-row gap-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-5 lg:gap-6">
 
         {/* Left Sidebar Navigation */}
         <Sidebar />

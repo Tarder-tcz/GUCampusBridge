@@ -88,7 +88,7 @@ export const Header = () => {
               {/* Mobile Hamburger Drawer Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden p-2 text-slate-300 hover:text-white bg-slate-900/80 border border-white/10 rounded-xl hover:border-white/20 transition-all focus:outline-none cursor-pointer haptic-btn"
+                className="md:hidden p-2 text-slate-300 hover:text-white bg-slate-900/80 border border-white/10 rounded-xl hover:border-white/20 transition-all focus:outline-none cursor-pointer haptic-btn"
                 aria-label="Toggle navigation menu"
                 title="Open Sidebar Menu"
               >
@@ -380,7 +380,7 @@ export const Header = () => {
           />
 
           {/* Slide-In Sidebar Drawer from Left */}
-          <div className="lg:hidden fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] z-50 bg-slate-950 border-r border-slate-800/90 shadow-2xl p-4 overflow-y-auto animate-in slide-in-from-left duration-300">
+          <div className="md:hidden fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] z-50 bg-slate-950 border-r border-slate-800/90 shadow-2xl p-4 overflow-y-auto animate-in slide-in-from-left duration-300">
             {/* Drawer Close Header */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
               <span className="font-extrabold text-base tracking-tight text-slate-100">
