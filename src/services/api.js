@@ -6,7 +6,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || (
 
 function getHeaders(token = null) {
   const headers = { 'Content-Type': 'application/json' };
-  const authToken = token || localStorage.getItem('gucampusbridge_token');
+  const authToken = token || localStorage.getItem('gucampusbridge_token') || localStorage.getItem('gucampusbridge_staff_token');
   if (authToken) {
     headers['Authorization'] = `Bearer ${authToken}`;
   }

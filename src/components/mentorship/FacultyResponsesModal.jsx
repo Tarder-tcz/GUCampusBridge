@@ -30,8 +30,14 @@ export const FacultyResponsesModal = () => {
     isFacultyResponsesOpen,
     setIsFacultyResponsesOpen,
     facultyBookmarks,
-    toggleFacultyBookmark
+    toggleFacultyBookmark,
+    isFaculty,
+    isAdmin,
+    userState
   } = useForum();
+
+  const hasStaffToken = typeof window !== 'undefined' && !!localStorage.getItem('gucampusbridge_staff_token');
+  const canAccessFacultyResponses = isFaculty || isAdmin || (userState && (userState.role === 'FACULTY' || userState.role === 'ADMIN')) || hasStaffToken;
 
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,9 +48,9 @@ export const FacultyResponsesModal = () => {
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' (newest first) | 'asc' (oldest first)
   const [copiedId, setCopiedId] = useState(null);
 
-  // Fetch all faculty responses on open
+  // Fetch all faculty responses on open (strictly for authorized faculty/admins)
   useEffect(() => {
-    if (!isFacultyResponsesOpen) return;
+    if (!isFacultyResponsesOpen || !canAccessFacultyResponses) return;
 
     async function loadResponses() {
       setLoading(true);
@@ -125,7 +131,7 @@ export const FacultyResponsesModal = () => {
     return responses.filter(r => facultyBookmarks.includes(r.id)).length;
   }, [responses, facultyBookmarks]);
 
-  if (!isFacultyResponsesOpen) return null;
+  if (!isFacultyResponsesOpen || !canAccessFacultyResponses) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">

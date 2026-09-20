@@ -1337,9 +1337,26 @@ app.get('/api/mentors', async (req, res) => {
   }
 });
 
-// GET /api/faculty-responses - Fetch all faculty responses to students, sorted newest to oldest
+// GET /api/faculty-responses - Fetch all faculty responses to students (Faculty & Admin only)
 app.get('/api/faculty-responses', async (req, res) => {
   try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied: Authentication required' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired session token' });
+    }
+
+    if (!decoded || (decoded.role !== 'FACULTY' && decoded.role !== 'ADMIN' && decoded.role !== 'STAFF')) {
+      return res.status(403).json({ error: 'Access denied: Faculty or Admin role required' });
+    }
+
     const { department, search } = req.query;
 
     const mentorshipResponses = await prisma.mentorshipRequest.findMany({
