@@ -25,6 +25,30 @@ export const ForumProvider = ({ children }) => {
 
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
   const [isStaffPortalOpen, setIsStaffPortalOpen] = useState(false);
+  const [isFacultyResponsesOpen, setIsFacultyResponsesOpen] = useState(false);
+
+  const [facultyBookmarks, setFacultyBookmarks] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gucampusbridge_faculty_bookmarks');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFacultyBookmark = (responseId) => {
+    setFacultyBookmarks(prev => {
+      const next = prev.includes(responseId)
+        ? prev.filter(id => id !== responseId)
+        : [...prev, responseId];
+      try {
+        localStorage.setItem('gucampusbridge_faculty_bookmarks', JSON.stringify(next));
+      } catch (e) {
+        console.warn('Failed to save faculty bookmark:', e);
+      }
+      return next;
+    });
+  };
 
   const [token, setToken] = useState(() => localStorage.getItem('gucampusbridge_token'));
 
@@ -412,6 +436,10 @@ export const ForumProvider = ({ children }) => {
         setIsMentorModalOpen,
         isStaffPortalOpen,
         setIsStaffPortalOpen,
+        isFacultyResponsesOpen,
+        setIsFacultyResponsesOpen,
+        facultyBookmarks,
+        toggleFacultyBookmark,
         isAuthModalOpen,
         setIsAuthModalOpen,
         authModalMode,

@@ -1314,6 +1314,76 @@ app.get('/api/mentors', async (req, res) => {
   }
 });
 
+// GET /api/faculty-responses - Fetch all faculty responses to students, sorted newest to oldest
+app.get('/api/faculty-responses', async (req, res) => {
+  try {
+    const { department, search } = req.query;
+
+    const mentorshipResponses = await prisma.mentorshipRequest.findMany({
+      where: {
+        replyMessage: { not: null },
+        ...(department && department !== 'all' ? {
+          OR: [
+            { studentDepartment: { contains: department, mode: 'insensitive' } },
+            { mentor: { department: { contains: department, mode: 'insensitive' } } }
+          ]
+        } : {})
+      },
+      include: {
+        mentor: {
+          select: {
+            id: true,
+            name: true,
+            role: true,
+            department: true,
+            avatar: true,
+            specialTag: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let formatted = mentorshipResponses.map(r => ({
+      id: r.id,
+      type: 'MENTORSHIP_ADVISORY',
+      facultyName: r.mentor?.name || r.mentorName,
+      facultyRole: r.mentor?.role || 'Faculty Advisor',
+      facultyDepartment: r.mentor?.department || r.studentDepartment,
+      facultyAvatar: r.mentor?.avatar || DEFAULT_AVATAR,
+      facultySpecialTag: r.mentor?.specialTag,
+      studentName: r.studentName,
+      studentDepartment: r.studentDepartment,
+      admissionNo: r.admissionNo,
+      inquiryTopic: r.reason,
+      responseContent: r.replyMessage,
+      status: r.status,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt
+    }));
+
+    if (search && search.trim()) {
+      const q = search.toLowerCase();
+      formatted = formatted.filter(item =>
+        item.facultyName.toLowerCase().includes(q) ||
+        item.facultyRole.toLowerCase().includes(q) ||
+        item.facultyDepartment.toLowerCase().includes(q) ||
+        item.studentName.toLowerCase().includes(q) ||
+        item.inquiryTopic.toLowerCase().includes(q) ||
+        item.responseContent.toLowerCase().includes(q)
+      );
+    }
+
+    // Sort newest at the top to oldest at the bottom
+    formatted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    res.json(formatted);
+  } catch (err) {
+    console.error('Error fetching faculty responses:', err);
+    res.status(500).json({ error: 'Failed to fetch faculty responses' });
+  }
+});
+
 // POST /api/mentorship-requests - Submit student 1-on-1 request
 app.post('/api/mentorship-requests', async (req, res) => {
   try {

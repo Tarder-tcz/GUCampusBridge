@@ -303,6 +303,20 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || '2FA verification failed');
     return data;
+  },
+
+  async getFacultyResponses(department = null, search = null) {
+    const params = new URLSearchParams();
+    if (department && department !== 'all') params.append('department', department);
+    if (search && search.trim()) params.append('search', search.trim());
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/faculty-responses${queryStr}`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch faculty responses');
+    return data;
   }
 };
 

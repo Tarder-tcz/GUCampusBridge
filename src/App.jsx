@@ -12,6 +12,7 @@ import { NotificationDrawer } from './components/notifications/NotificationDrawe
 import { AuthModal } from './components/auth/AuthModal';
 import { MentorConnectModal } from './components/mentorship/MentorConnectModal';
 import { StaffPortalModal } from './components/mentorship/StaffPortalModal';
+import { FacultyResponsesModal } from './components/mentorship/FacultyResponsesModal';
 import { Sparkles, MessageSquarePlus, Filter, X } from 'lucide-react';
 
 const ForumMainContent = () => {
@@ -203,6 +204,7 @@ export default function App() {
           <Route path="/claim-invite" element={<ClaimInvitePage />} />
           <Route path="/403" element={<ForbiddenPage />} />
         </Routes>
+        <FacultyResponsesModal />
       </ForumProvider>
     </BrowserRouter>
   );

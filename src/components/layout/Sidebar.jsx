@@ -14,7 +14,8 @@ import {
   UserCheck,
   ShieldCheck,
   ShieldAlert,
-  ChevronRight
+  ChevronRight,
+  MessageSquareQuote
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -42,6 +43,7 @@ export const SidebarContent = ({ onSelect }) => {
     setSelectedTag,
     setIsMentorModalOpen,
     setIsStaffPortalOpen,
+    setIsFacultyResponsesOpen,
     isAdmin
   } = useForum();
 
@@ -110,6 +112,30 @@ export const SidebarContent = ({ onSelect }) => {
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-rose-300 group-hover:translate-x-0.5 transition-all" />
+        </button>
+
+        {/* Faculty Responses & Advice Dialogue Trigger */}
+        <button
+          onClick={() => {
+            setIsFacultyResponsesOpen(true);
+            if (onSelect) onSelect();
+          }}
+          className="w-full relative overflow-hidden text-slate-100 p-2.5 rounded-xl text-xs flex items-center justify-between border bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900 hover:to-amber-950/40 border-amber-500/30 hover:border-amber-500/60 shadow-md shadow-amber-950/20 transition-all cursor-pointer group haptic-btn"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg border bg-amber-500/20 border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <MessageSquareQuote className="w-4 h-4" />
+            </div>
+            <div className="text-left leading-tight">
+              <div className="font-bold text-white group-hover:text-amber-200 transition-colors flex items-center gap-1.5">
+                <span>Faculty Responses</span>
+              </div>
+              <div className="text-[10px] text-slate-400 font-medium mt-0.5">Advice & Answers Archive</div>
+            </div>
+          </div>
+          <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
+            Browse
+          </span>
         </button>
 
         {/* Staff & Mentor Portal Button */}
