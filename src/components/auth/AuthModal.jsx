@@ -40,21 +40,6 @@ export const AuthModal = () => {
     setTempToken('');
   };
 
-  // Demo account quick switchers for RBAC testing
-  const fillDemoAccount = (roleType) => {
-    if (roleType === 'admin') {
-      setEmail('admin@galgotias.edu');
-      setPassword('AdminSecret123!');
-    } else if (roleType === 'faculty') {
-      setEmail('ananya.sharma@galgotias.edu');
-      setPassword('StaffPassword123!');
-    } else {
-      setEmail('aryan@galgotias.edu');
-      setPassword('Password123!');
-    }
-    setError('');
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -229,7 +214,7 @@ export const AuthModal = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="e.g. aryan@galgotias.edu"
+                    placeholder="e.g. your.email@galgotias.edu"
                     className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition-all"
                     required
                   />
@@ -248,36 +233,6 @@ export const AuthModal = () => {
                     className="w-full bg-slate-950/80 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-slate-600 focus:ring-1 focus:ring-slate-600 transition-all"
                     required
                   />
-                </div>
-              </div>
-
-              {/* Quick RBAC Switcher Pills for Testing */}
-              <div className="pt-2 border-t border-slate-800 space-y-1.5">
-                <span className="text-[10px] text-slate-500 font-mono block">
-                  Quick Demo RBAC Sign In:
-                </span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => fillDemoAccount('student')}
-                    className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-mono cursor-pointer"
-                  >
-                    Student
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillDemoAccount('faculty')}
-                    className="px-2 py-1 rounded bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono cursor-pointer"
-                  >
-                    Faculty
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => fillDemoAccount('admin')}
-                    className="px-2 py-1 rounded bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 text-rose-300 text-[10px] font-mono cursor-pointer font-bold"
-                  >
-                    Super Admin
-                  </button>
                 </div>
               </div>
             </>
