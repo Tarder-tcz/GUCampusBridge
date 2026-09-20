@@ -77,12 +77,30 @@ export const MentorConnectModal = () => {
   if (!isMentorModalOpen) return null;
 
   // Filtered Mentors
-  const filteredMentors = mentorsList.filter(m => {
-    const matchesDept = selectedDeptFilter === 'All Departments' || m.department.toLowerCase().includes(selectedDeptFilter.toLowerCase().split(' ')[0]);
-    const matchesSearch = !mentorSearch ||
-      m.name.toLowerCase().includes(mentorSearch.toLowerCase()) ||
-      m.role.toLowerCase().includes(mentorSearch.toLowerCase()) ||
-      m.department.toLowerCase().includes(mentorSearch.toLowerCase());
+  const filteredMentors = (Array.isArray(mentorsList) ? mentorsList : []).filter(m => {
+    let matchesDept = selectedDeptFilter === 'All Departments';
+    if (!matchesDept && m.department) {
+      const deptLower = m.department.toLowerCase();
+      if (selectedDeptFilter.includes('SCSE') || selectedDeptFilter.includes('Computer')) {
+        matchesDept = deptLower.includes('scse') || deptLower.includes('computer');
+      } else if (selectedDeptFilter.includes('SOE') || selectedDeptFilter.includes('Engineering')) {
+        matchesDept = (deptLower.includes('soe') || deptLower.includes('engineering')) && !deptLower.includes('computer');
+      } else if (selectedDeptFilter.includes('SOB') || selectedDeptFilter.includes('Business')) {
+        matchesDept = deptLower.includes('sob') || deptLower.includes('business');
+      } else if (selectedDeptFilter.includes('Placement')) {
+        matchesDept = deptLower.includes('placement');
+      } else if (selectedDeptFilter.includes('Exam')) {
+        matchesDept = deptLower.includes('exam');
+      } else {
+        matchesDept = deptLower.includes(selectedDeptFilter.toLowerCase());
+      }
+    }
+
+    const term = mentorSearch.toLowerCase().trim();
+    const matchesSearch = !term ||
+      (m.name && m.name.toLowerCase().includes(term)) ||
+      (m.role && m.role.toLowerCase().includes(term)) ||
+      (m.department && m.department.toLowerCase().includes(term));
     return matchesDept && matchesSearch;
   });
 
@@ -314,7 +332,7 @@ export const MentorConnectModal = () => {
                       type="text"
                       value={mentorSearch}
                       onChange={(e) => setMentorSearch(e.target.value)}
-                      placeholder="Search Dr. Ananya, Prof. Rajesh..."
+                      placeholder="Search faculty mentor, department..."
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-200 focus:outline-none"
                     />
                   </div>

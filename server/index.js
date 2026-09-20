@@ -1288,28 +1288,51 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
    1-ON-1 MENTORSHIP & STAFF PORTAL ENDPOINTS
    ========================================== */
 
-// GET /api/mentors - List mentors with optional department filter
+// GET /api/mentors - List registered faculty mentors with optional department filter
 app.get('/api/mentors', async (req, res) => {
   try {
     const { department } = req.query;
-    let mentors;
-    if (department && department !== 'all') {
-      mentors = await prisma.staffMentor.findMany({
-        where: {
-          department: {
-            contains: department,
-            mode: 'insensitive'
-          }
-        }
-      });
-    } else {
-      mentors = await prisma.staffMentor.findMany();
+    const facultyWhere = {
+      role: 'FACULTY'
+    };
+
+    if (department && department !== 'all' && department !== 'All Departments') {
+      facultyWhere.department = {
+        contains: department,
+        mode: 'insensitive'
+      };
     }
-    res.json(mentors.map(m => {
-      const { password, ...mClean } = m;
-      return mClean;
+
+    const faculty = await prisma.user.findMany({
+      where: facultyWhere,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        headline: true,
+        badge: true,
+        department: true,
+        avatar: true,
+        bio: true,
+        specialTag: true
+      },
+      orderBy: { name: 'asc' }
+    });
+
+    const mentors = faculty.map(f => ({
+      id: f.id,
+      name: f.name,
+      email: f.email,
+      role: f.headline || f.badge || 'Faculty Mentor',
+      department: f.department || 'School of Computer Science & Engineering (SCSE)',
+      avatar: f.avatar || DEFAULT_AVATAR,
+      bio: f.bio || 'Available for private student consultations, project guidance, and academic mentoring.',
+      specialTag: f.specialTag
     }));
+
+    res.json(mentors);
   } catch (err) {
+    console.error('Error fetching mentors:', err);
     res.status(500).json({ error: 'Failed to fetch mentors list' });
   }
 });
@@ -1322,7 +1345,7 @@ app.get('/api/faculty-responses', async (req, res) => {
     const mentorshipResponses = await prisma.mentorshipRequest.findMany({
       where: {
         replyMessage: { not: null },
-        ...(department && department !== 'all' ? {
+        ...(department && department !== 'all' && department !== 'All Departments' ? {
           OR: [
             { studentDepartment: { contains: department, mode: 'insensitive' } },
             { mentor: { department: { contains: department, mode: 'insensitive' } } }
@@ -1334,7 +1357,8 @@ app.get('/api/faculty-responses', async (req, res) => {
           select: {
             id: true,
             name: true,
-            role: true,
+            headline: true,
+            badge: true,
             department: true,
             avatar: true,
             specialTag: true
@@ -1348,7 +1372,7 @@ app.get('/api/faculty-responses', async (req, res) => {
       id: r.id,
       type: 'MENTORSHIP_ADVISORY',
       facultyName: r.mentor?.name || r.mentorName,
-      facultyRole: r.mentor?.role || 'Faculty Advisor',
+      facultyRole: r.mentor?.headline || r.mentor?.badge || 'Faculty Advisor',
       facultyDepartment: r.mentor?.department || r.studentDepartment,
       facultyAvatar: r.mentor?.avatar || DEFAULT_AVATAR,
       facultySpecialTag: r.mentor?.specialTag,
@@ -1393,9 +1417,14 @@ app.post('/api/mentorship-requests', async (req, res) => {
       return res.status(400).json({ error: 'All fields are required' });
     }
 
-    const mentor = await prisma.staffMentor.findUnique({ where: { id: mentorId } });
+    const mentor = await prisma.user.findFirst({
+      where: {
+        id: mentorId,
+        role: 'FACULTY'
+      }
+    });
     if (!mentor) {
-      return res.status(404).json({ error: 'Selected mentor not found' });
+      return res.status(404).json({ error: 'Selected faculty mentor not found or inactive' });
     }
 
     const request = await prisma.mentorshipRequest.create({
@@ -1405,7 +1434,7 @@ app.post('/api/mentorship-requests', async (req, res) => {
         contactNo,
         studentDepartment: studentDepartment || 'General Student',
         reason,
-        mentorId,
+        mentorId: mentor.id,
         mentorName: mentor.name,
         status: 'PENDING'
       }
@@ -1421,72 +1450,73 @@ app.post('/api/mentorship-requests', async (req, res) => {
   }
 });
 
-// POST /api/staff/login - Staff / Mentor Login using special tag and password
+// POST /api/staff/login - Staff / Faculty Mentor Login using email or special tag and password
 app.post('/api/staff/login', async (req, res) => {
   try {
-    const { specialTag, password } = req.body;
+    const { specialTag, email, password } = req.body;
+    const identifier = (specialTag || email || '').trim();
 
-    if (!specialTag || !password) {
-      return res.status(400).json({ error: 'Special Tag and Password are required' });
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Email/Special Tag and Password are required' });
     }
 
-    let tagToSearch = specialTag.trim();
-
-    let staff = await prisma.staffMentor.findFirst({
-      where: { specialTag: { equals: tagToSearch, mode: 'insensitive' } }
+    const staff = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: { equals: identifier, mode: 'insensitive' } },
+          { specialTag: { equals: identifier, mode: 'insensitive' } }
+        ],
+        role: { in: ['FACULTY', 'ADMIN'] }
+      }
     });
 
     if (!staff) {
-      // Flexible alias lookup (e.g. PROF-CSE-101 maps to PROF-SCSE-101)
-      const altTag = tagToSearch.replace('CSE', 'SCSE');
-      staff = await prisma.staffMentor.findFirst({
-        where: { specialTag: { equals: altTag, mode: 'insensitive' } }
-      });
-    }
-
-    if (!staff) {
-      return res.status(401).json({ error: 'Invalid Staff Special Tag or Password' });
+      return res.status(401).json({ error: 'Invalid Faculty Credentials or Account Not Found' });
     }
 
     const isMatch = bcrypt.compareSync(password, staff.password);
     if (!isMatch) {
-      return res.status(401).json({ error: 'Invalid Staff Special Tag or Password' });
+      return res.status(401).json({ error: 'Invalid Password' });
     }
 
-    const token = jwt.sign({ id: staff.id, role: 'STAFF', specialTag: staff.specialTag }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(
+      { id: staff.id, role: staff.role, email: staff.email, specialTag: staff.specialTag },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
     const { password: _, ...staffClean } = staff;
 
     res.json({
-      message: 'Staff login successful',
+      message: 'Faculty login successful',
       token,
       staff: staffClean
     });
   } catch (err) {
-    console.error('Staff login error:', err);
-    res.status(500).json({ error: 'Staff authentication failed' });
+    console.error('Staff/Faculty login error:', err);
+    res.status(500).json({ error: 'Faculty authentication failed' });
   }
 });
 
-// GET /api/staff/requests - Fetch incoming requests for logged in staff mentor
+// GET /api/staff/requests - Fetch incoming requests for logged in faculty mentor
 app.get('/api/staff/requests', async (req, res) => {
   try {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Staff authentication token missing' });
+    if (!token) return res.status(401).json({ error: 'Faculty authentication token missing' });
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded || decoded.role !== 'STAFF') {
-      return res.status(403).json({ error: 'Access denied: Staff login required' });
+    if (!decoded || (decoded.role !== 'FACULTY' && decoded.role !== 'ADMIN' && decoded.role !== 'STAFF')) {
+      return res.status(403).json({ error: 'Access denied: Faculty login required' });
     }
 
     const requests = await prisma.mentorshipRequest.findMany({
-      where: { mentorId: decoded.id },
+      where: decoded.role === 'ADMIN' ? {} : { mentorId: decoded.id },
       orderBy: { createdAt: 'desc' }
     });
 
     res.json(requests);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch staff requests' });
+    res.status(500).json({ error: 'Failed to fetch faculty requests' });
   }
 });
 

@@ -48,48 +48,7 @@ const DEPARTMENTS = [
   'School of Medical & Allied Sciences (SMAS)'
 ];
 
-const FALLBACK_MENTORS = [
-  {
-    id: 'staff_1',
-    name: 'Dr. Ananya Sharma',
-    role: 'Professor & AI Lead',
-    department: 'School of Computer Science & Engineering (SCSE)',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    bio: 'Professor of AI & Machine Learning. Guidance in research papers, capstone projects, and DSA.'
-  },
-  {
-    id: 'staff_2',
-    name: 'Prof. Rajesh Kumar',
-    role: 'Senior Faculty & HOD',
-    department: 'School of Engineering (SOE)',
-    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
-    bio: 'Mechanical Engineering Senior Faculty. Robotics & Industrial Automation mentor.'
-  },
-  {
-    id: 'staff_3',
-    name: 'Priya Nair',
-    role: 'Student Volunteer & Peer TA',
-    department: 'School of Computer Science & Engineering (SCSE)',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    bio: '4th Year CSE Top Contributor. Peer-to-peer tutoring for CAT exams & placement prep.'
-  },
-  {
-    id: 'staff_4',
-    name: 'Dr. Vikramaditya Roy',
-    role: 'Academic Counselor & MBA Mentor',
-    department: 'School of Business (SOB)',
-    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
-    bio: 'School of Business Senior Counselor. Corporate relations & internship guidance.'
-  },
-  {
-    id: 'staff_5',
-    name: 'Placement & Corporate Cell',
-    role: 'Placement Officer',
-    department: 'Placements & Corporate Relations',
-    avatar: 'https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=150&auto=format&fit=crop&q=80',
-    bio: 'Galgotias Placement Cell Representatives for campus hiring and internship queries.'
-  }
-];
+
 
 export const MentorConnectPage = () => {
   const { userState } = useForum();
@@ -131,7 +90,7 @@ export const MentorConnectPage = () => {
     }
   }, [userState]);
 
-  // Fetch Mentors List from backend with fallback
+  // Fetch Mentors List from backend
   useEffect(() => {
     let isMounted = true;
     async function fetchMentors() {
@@ -139,16 +98,16 @@ export const MentorConnectPage = () => {
         setFetchingMentors(true);
         const data = await api.getMentors('all');
         if (isMounted) {
-          if (Array.isArray(data) && data.length > 0) {
+          if (Array.isArray(data)) {
             setMentorsList(data);
           } else {
-            setMentorsList(FALLBACK_MENTORS);
+            setMentorsList([]);
           }
         }
       } catch (err) {
-        console.warn('Failed to load mentors from API, using fallback data:', err);
+        console.warn('Failed to load mentors from API:', err);
         if (isMounted) {
-          setMentorsList(FALLBACK_MENTORS);
+          setMentorsList([]);
         }
       } finally {
         if (isMounted) setFetchingMentors(false);
@@ -161,8 +120,23 @@ export const MentorConnectPage = () => {
 
   // Filtered Mentors list
   const filteredMentors = mentorsList.filter(m => {
-    const matchesDept = selectedDeptFilter === 'All Departments' ||
-      (m.department && m.department.toLowerCase().includes(selectedDeptFilter.toLowerCase().split(' ')[0]));
+    let matchesDept = selectedDeptFilter === 'All Departments';
+    if (!matchesDept && m.department) {
+      const deptLower = m.department.toLowerCase();
+      if (selectedDeptFilter.includes('SCSE') || selectedDeptFilter.includes('Computer')) {
+        matchesDept = deptLower.includes('scse') || deptLower.includes('computer');
+      } else if (selectedDeptFilter.includes('SOE') || selectedDeptFilter.includes('Engineering')) {
+        matchesDept = (deptLower.includes('soe') || deptLower.includes('engineering')) && !deptLower.includes('computer');
+      } else if (selectedDeptFilter.includes('SOB') || selectedDeptFilter.includes('Business')) {
+        matchesDept = deptLower.includes('sob') || deptLower.includes('business');
+      } else if (selectedDeptFilter.includes('Placement')) {
+        matchesDept = deptLower.includes('placement');
+      } else if (selectedDeptFilter.includes('Exam')) {
+        matchesDept = deptLower.includes('exam');
+      } else {
+        matchesDept = deptLower.includes(selectedDeptFilter.toLowerCase());
+      }
+    }
     
     const term = mentorSearch.toLowerCase().trim();
     const matchesSearch = !term ||
@@ -658,7 +632,7 @@ export const MentorConnectPage = () => {
                       type="text"
                       value={mentorSearch}
                       onChange={(e) => setMentorSearch(e.target.value)}
-                      placeholder="e.g. Dr. Ananya, AI, Robotics, Placement..."
+                      placeholder="e.g. Aniket, SCSE, Algorithms, Placement..."
                       className="w-full bg-slate-900 border border-white/10 rounded-xl pl-10 pr-8 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500/60 transition-all"
                     />
                     {mentorSearch && (
@@ -806,6 +780,14 @@ export const MentorConnectPage = () => {
                         </div>
                       );
                     })}
+                  </div>
+                ) : mentorsList.length === 0 ? (
+                  <div className="py-16 text-center glass-panel rounded-2xl border border-white/[0.08] p-6 space-y-3">
+                    <UserCheck className="w-10 h-10 text-slate-500 mx-auto" />
+                    <h3 className="text-sm font-bold text-white">No faculty mentors registered yet</h3>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      Verified faculty members will appear here once invited and onboarded by university administration.
+                    </p>
                   </div>
                 ) : (
                   <div className="py-16 text-center glass-panel rounded-2xl border border-white/[0.08] p-6 space-y-3">
