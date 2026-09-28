@@ -162,14 +162,6 @@ const ForumMainContent = () => {
 
       </main>
 
-      {/* Global Modals & Drawers */}
-      <CreatePostModal />
-      <NotificationDrawer />
-      <AuthModal />
-      <MentorConnectModal />
-      <StaffPortalModal />
-
-
     </div>
   );
 };
@@ -181,31 +173,51 @@ import { AdminDashboardPage } from './pages/AdminDashboardPage';
 import { ClaimInvitePage } from './pages/ClaimInvitePage';
 import { ForbiddenPage } from './pages/ForbiddenPage';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 export default function App() {
   return (
     <BrowserRouter>
-      <ForumProvider>
-        <Routes>
-          <Route path="/" element={<ForumMainContent />} />
-          <Route path="/post/:postId" element={<PostPage />} />
-          <Route path="/user/:userId" element={<UserPage />} />
-          <Route path="/user/me" element={<UserPage />} />
-          <Route path="/settings" element={<UserSettingsPage />} />
-          <Route path="/mentor-connect" element={<MentorConnectPage />} />
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={['ADMIN']}>
-                <AdminDashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="/claim-invite" element={<ClaimInvitePage />} />
-          <Route path="/403" element={<ForbiddenPage />} />
-        </Routes>
-        <FacultyResponsesModal />
-      </ForumProvider>
+      <ErrorBoundary>
+        <ForumProvider>
+          <Routes>
+            <Route path="/" element={<ForumMainContent />} />
+            <Route path="/post/:postId" element={<PostPage />} />
+            <Route path="/user/:userId" element={<UserPage />} />
+            <Route path="/user/me" element={<UserPage />} />
+            <Route path="/settings" element={<UserSettingsPage />} />
+            <Route path="/mentor-connect" element={<MentorConnectPage />} />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN']}>
+                  <AdminDashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/claim-invite" element={<ClaimInvitePage />} />
+            <Route path="/403" element={<ForbiddenPage />} />
+          </Routes>
+          <ErrorBoundary>
+            <FacultyResponsesModal />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <StaffPortalModal />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <MentorConnectModal />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <AuthModal />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <CreatePostModal />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <NotificationDrawer />
+          </ErrorBoundary>
+        </ForumProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }

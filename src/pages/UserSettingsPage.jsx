@@ -20,6 +20,7 @@ import {
   Camera,
   Shield,
   ShieldCheck,
+  ShieldAlert,
   Key,
   Lock,
   Copy,
