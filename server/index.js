@@ -1006,15 +1006,36 @@ app.get('/api/users/:userId/activity', authenticateToken, async (req, res) => {
     // Filter accepted solutions
     const acceptedAnswers = comments.filter(c => c.isSolution);
 
+    // Fetch user notices
+    const notices = await prisma.notice.findMany({
+      where: {
+        OR: [
+          { authorId: targetUser.id },
+          { authorName: { equals: targetUser.name, mode: 'insensitive' } },
+          { authorHandle: { equals: targetUser.handle, mode: 'insensitive' } }
+        ]
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const now = new Date();
+    const formattedNotices = notices.map(n => ({
+      ...n,
+      isCurrentlyPinned: Boolean(n.isPinned && (!n.pinnedUntil || new Date(n.pinnedUntil) > now)),
+      isExpired: Boolean(n.expiresAt && new Date(n.expiresAt) <= now)
+    }));
+
     res.json({
       user: formatUser(targetUser),
       posts: posts.map(formatPost),
       comments: comments.map(formatComment),
       acceptedAnswers: acceptedAnswers.map(formatComment),
+      notices: formattedNotices,
       stats: {
         totalPosts: posts.length,
         totalComments: comments.length,
-        totalAnswers: acceptedAnswers.length
+        totalAnswers: acceptedAnswers.length,
+        totalNotices: formattedNotices.length
       }
     });
   } catch (err) {
@@ -1848,6 +1869,351 @@ app.get('/api/admin/faculty-responses/audit', authenticateToken, requireRole('AD
     res.status(500).json({ error: 'Failed to fetch faculty response audit log' });
   }
 });
+
+// =========================================================================
+// NOTICEBOARD & CAMPUS ANNOUNCEMENT SYSTEM (FACULTY, VOLUNTEERS, ADMIN)
+// =========================================================================
+
+function parseDurationMs(durationStr) {
+  if (!durationStr || durationStr === 'never' || durationStr === 'indefinite') return null;
+  const s = String(durationStr).toLowerCase().trim();
+  if (s === '2h' || s === '2hrs' || s === '2 hours') return 2 * 60 * 60 * 1000;
+  if (s === '6h' || s === '6hrs' || s === '6 hours') return 6 * 60 * 60 * 1000;
+  if (s === '12h' || s === '12hrs' || s === '12 hours') return 12 * 60 * 60 * 1000;
+  if (s === '24h' || s === '24hrs' || s === '1d' || s === '1 day') return 24 * 60 * 60 * 1000;
+  if (s === '2d' || s === '2 days') return 2 * 24 * 60 * 60 * 1000;
+  if (s === '3d' || s === '3 days') return 3 * 24 * 60 * 60 * 1000;
+  if (s === '4d' || s === '4 days') return 4 * 24 * 60 * 60 * 1000;
+  if (s === '5d' || s === '5 days') return 5 * 24 * 60 * 60 * 1000;
+  if (s === '6d' || s === '6 days') return 6 * 24 * 60 * 60 * 1000;
+  if (s === '7d' || s === '7 days' || s === '1w' || s === '1 week') return 7 * 24 * 60 * 60 * 1000;
+  if (s === '2w' || s === '2 weeks') return 14 * 24 * 60 * 60 * 1000;
+  if (s === '1mo' || s === '30d' || s === '1 month') return 30 * 24 * 60 * 60 * 1000;
+  return null;
+}
+
+// GET /api/notices - Retrieve active notices (Publicly readable)
+app.get('/api/notices', async (req, res) => {
+  try {
+    const { category, department, search, includeExpired } = req.query;
+
+    let whereClause = {};
+
+    if (category && category !== 'ALL' && category !== 'all') {
+      whereClause.category = { equals: category.toUpperCase() };
+    }
+
+    if (department && department !== 'ALL' && department !== 'all') {
+      whereClause.OR = [
+        { department: { contains: department, mode: 'insensitive' } },
+        { department: null }
+      ];
+    }
+
+    const notices = await prisma.notice.findMany({
+      where: whereClause,
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            handle: true,
+            role: true,
+            badge: true,
+            avatar: true,
+            department: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    const now = new Date();
+
+    // Filter search if provided
+    let list = notices;
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(n =>
+        n.title.toLowerCase().includes(q) ||
+        n.content.toLowerCase().includes(q) ||
+        n.authorName.toLowerCase().includes(q) ||
+        (n.category && n.category.toLowerCase().includes(q))
+      );
+    }
+
+    // Filter expired unless explicitly requested
+    if (includeExpired !== 'true') {
+      list = list.filter(n => !n.expiresAt || new Date(n.expiresAt) > now);
+    }
+
+    const formatted = list.map(n => {
+      const isCurrentlyPinned = Boolean(n.isPinned && (!n.pinnedUntil || new Date(n.pinnedUntil) > now));
+      const isExpired = Boolean(n.expiresAt && new Date(n.expiresAt) <= now);
+      return {
+        ...n,
+        isCurrentlyPinned,
+        isExpired
+      };
+    });
+
+    // Pinned notices first, then newest
+    const pinned = formatted.filter(n => n.isCurrentlyPinned);
+    const latest = formatted; // all active top-to-bottom
+
+    res.json({
+      pinned,
+      latest,
+      all: formatted,
+      total: formatted.length,
+      pinnedCount: pinned.length
+    });
+  } catch (err) {
+    console.error('Error fetching notices:', err);
+    res.status(500).json({ error: 'Failed to fetch campus notices' });
+  }
+});
+
+// POST /api/notices - Publish a new notice (Faculty, Volunteer, Admin)
+app.post('/api/notices', authenticateToken, requireAuth, requireRole('VOLUNTEER', 'FACULTY', 'ADMIN'), async (req, res) => {
+  try {
+    const {
+      title,
+      content,
+      category = 'NOTICE',
+      department,
+      isPinned = false,
+      pinDuration,
+      expiryDuration = '1d',
+      eventDate,
+      location
+    } = req.body;
+
+    if (!title || !title.trim()) {
+      return res.status(400).json({ error: 'Notice title is required' });
+    }
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Notice content is required' });
+    }
+
+    const userProfile = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+
+    if (!userProfile) {
+      return res.status(404).json({ error: 'User profile not found' });
+    }
+
+    const now = Date.now();
+    let pinnedUntil = null;
+    if (isPinned) {
+      const pinMs = parseDurationMs(pinDuration) || (24 * 60 * 60 * 1000); // default 24h pin
+      pinnedUntil = new Date(now + pinMs);
+    }
+
+    let expiresAt = null;
+    const expMs = parseDurationMs(expiryDuration !== undefined ? expiryDuration : '1d'); // default 1d
+    if (expMs) {
+      expiresAt = new Date(now + expMs);
+    }
+
+    const notice = await prisma.notice.create({
+      data: {
+        title: title.trim(),
+        content: content.trim(),
+        category: (category || 'NOTICE').toUpperCase(),
+        department: department || userProfile.department || 'Galgotias University',
+        authorId: userProfile.id,
+        authorName: userProfile.name,
+        authorHandle: userProfile.handle,
+        authorRole: userProfile.role,
+        authorBadge: userProfile.badge || (userProfile.role === 'VOLUNTEER' ? 'Volunteer' : userProfile.role === 'FACULTY' ? 'Faculty Mentor' : 'Superadmin'),
+        authorAvatar: userProfile.avatar || DEFAULT_AVATAR,
+        isPinned: Boolean(isPinned),
+        pinnedUntil,
+        expiresAt,
+        eventDate: eventDate || null,
+        location: location || null
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            handle: true,
+            role: true,
+            badge: true,
+            avatar: true,
+            department: true
+          }
+        }
+      }
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'NOTICE_PUBLISHED',
+      resource: `Notice:${notice.id}`,
+      metadata: {
+        noticeId: notice.id,
+        title: notice.title,
+        category: notice.category,
+        isPinned: notice.isPinned,
+        pinnedUntil: notice.pinnedUntil,
+        expiresAt: notice.expiresAt
+      },
+      req
+    });
+
+    res.status(201).json({
+      message: 'Notice published successfully',
+      notice: {
+        ...notice,
+        isCurrentlyPinned: Boolean(notice.isPinned && (!notice.pinnedUntil || new Date(notice.pinnedUntil) > new Date()))
+      }
+    });
+  } catch (err) {
+    console.error('Error creating notice:', err);
+    res.status(500).json({ error: 'Failed to publish notice' });
+  }
+});
+
+// PUT /api/notices/:id - Update an existing notice (Author or Admin)
+app.put('/api/notices/:id', authenticateToken, requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.notice.findUnique({ where: { id } });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Notice not found' });
+    }
+
+    const isAuthor = existing.authorId === req.user.id;
+    const isAdminUser = req.user.role === 'ADMIN';
+
+    if (!isAuthor && !isAdminUser) {
+      return res.status(403).json({ error: 'Forbidden: You can only edit notices published by your account.' });
+    }
+
+    const {
+      title,
+      content,
+      category,
+      department,
+      isPinned,
+      pinDuration,
+      expiryDuration,
+      eventDate,
+      location
+    } = req.body;
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (content !== undefined) updateData.content = content.trim();
+    if (category !== undefined) updateData.category = category.toUpperCase();
+    if (department !== undefined) updateData.department = department;
+    if (eventDate !== undefined) updateData.eventDate = eventDate;
+    if (location !== undefined) updateData.location = location;
+
+    const now = Date.now();
+    if (isPinned !== undefined) {
+      updateData.isPinned = Boolean(isPinned);
+      if (isPinned) {
+        const pinMs = parseDurationMs(pinDuration) || (24 * 60 * 60 * 1000);
+        updateData.pinnedUntil = new Date(now + pinMs);
+      } else {
+        updateData.pinnedUntil = null;
+      }
+    } else if (pinDuration) {
+      const pinMs = parseDurationMs(pinDuration);
+      if (pinMs) updateData.pinnedUntil = new Date(now + pinMs);
+    }
+
+    if (expiryDuration !== undefined) {
+      const expMs = parseDurationMs(expiryDuration);
+      updateData.expiresAt = expMs ? new Date(now + expMs) : null;
+    }
+
+    const updated = await prisma.notice.update({
+      where: { id },
+      data: updateData,
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            handle: true,
+            role: true,
+            badge: true,
+            avatar: true,
+            department: true
+          }
+        }
+      }
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'NOTICE_UPDATED',
+      resource: `Notice:${id}`,
+      metadata: { noticeId: id, updatedFields: Object.keys(updateData) },
+      req
+    });
+
+    res.json({
+      message: 'Notice updated successfully',
+      notice: {
+        ...updated,
+        isCurrentlyPinned: Boolean(updated.isPinned && (!updated.pinnedUntil || new Date(updated.pinnedUntil) > new Date()))
+      }
+    });
+  } catch (err) {
+    console.error('Error updating notice:', err);
+    res.status(500).json({ error: 'Failed to update notice' });
+  }
+});
+
+// DELETE /api/notices/:id - Delete an announcement (Author or Admin)
+app.delete('/api/notices/:id', authenticateToken, requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.notice.findUnique({ where: { id } });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Notice not found' });
+    }
+
+    const isAuthor = existing.authorId === req.user.id;
+    const isAdminUser = req.user.role === 'ADMIN';
+
+    if (!isAuthor && !isAdminUser) {
+      return res.status(403).json({ error: 'Forbidden: You can only delete notices published by your account.' });
+    }
+
+    await prisma.notice.delete({ where: { id } });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'NOTICE_DELETED',
+      resource: `Notice:${id}`,
+      metadata: { noticeId: id, title: existing.title, category: existing.category },
+      req
+    });
+
+    res.json({ success: true, message: 'Notice deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting notice:', err);
+    res.status(500).json({ error: 'Failed to delete notice' });
+  }
+});
+
+
 
 // Serve static frontend assets and SPA catch-all for page refreshes
 const distPath = path.join(__dirname, '../dist');

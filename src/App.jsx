@@ -13,6 +13,8 @@ import { AuthModal } from './components/auth/AuthModal';
 import { MentorConnectModal } from './components/mentorship/MentorConnectModal';
 import { StaffPortalModal } from './components/mentorship/StaffPortalModal';
 import { FacultyResponsesModal } from './components/mentorship/FacultyResponsesModal';
+import { NoticeModal } from './components/noticeboard/NoticeModal';
+import { CreateEditNoticeModal } from './components/noticeboard/CreateEditNoticeModal';
 import { Sparkles, MessageSquarePlus, Filter, X } from 'lucide-react';
 
 const ForumMainContent = () => {
@@ -215,6 +217,12 @@ export default function App() {
           </ErrorBoundary>
           <ErrorBoundary>
             <NotificationDrawer />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <NoticeModal />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <CreateEditNoticeModal />
           </ErrorBoundary>
         </ForumProvider>
       </ErrorBoundary>

@@ -13,7 +13,9 @@ export const useAuth = () => {
 
   const isAdmin = isAuthenticated && role === 'ADMIN';
   const isFaculty = isAuthenticated && (role === 'FACULTY' || role === 'ADMIN');
-  const isStudent = isAuthenticated && role === 'STUDENT';
+  const isVolunteer = isAuthenticated && role === 'VOLUNTEER';
+  const isStudent = isAuthenticated && (role === 'STUDENT' || role === 'VOLUNTEER');
+  const canManageNotices = isAuthenticated && ['VOLUNTEER', 'FACULTY', 'ADMIN'].includes(role);
 
   const hasRole = (allowedRoles = []) => {
     if (!isAuthenticated) return false;
@@ -27,7 +29,9 @@ export const useAuth = () => {
     isAuthenticated,
     isAdmin,
     isFaculty,
+    isVolunteer,
     isStudent,
+    canManageNotices,
     hasRole
   };
 };

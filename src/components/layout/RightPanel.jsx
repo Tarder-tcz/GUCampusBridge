@@ -1,8 +1,8 @@
 import React from 'react';
 import { useForum } from '../../context/ForumContext';
+import { NoticeboardWidget } from '../noticeboard/NoticeboardWidget';
 import {
   Flame,
-  TrendingUp,
   MessageSquare,
   ThumbsUp,
   CheckCircle2,
@@ -17,17 +17,11 @@ export const RightPanel = () => {
     .sort((a, b) => b.votes - a.votes)
     .slice(0, 3);
 
-  // Popular Discussions (Dynamically calculated by Likes + Replies + Views + Solved status)
-  const popularDiscussions = [...rawPosts]
-    .map(post => {
-      const activityScore = (post.votes * 3) + (post.commentCount * 5) + (post.views * 0.5) + (post.isSolved ? 10 : 0);
-      return { ...post, activityScore };
-    })
-    .sort((a, b) => b.activityScore - a.activityScore)
-    .slice(0, 5);
-
   return (
     <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-5">
+
+      {/* Campus Noticeboard (Faculty & Volunteer Announcements with Pinned & Latest) */}
+      <NoticeboardWidget />
 
       {/* Trending Discussions */}
       <div className="glass-panel rounded-2xl p-4 border border-white/[0.08] shadow-xl">
@@ -79,55 +73,6 @@ export const RightPanel = () => {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Popular Discussions */}
-      <div className="glass-panel rounded-2xl p-4 border border-white/[0.08] shadow-xl">
-        <div className="flex items-center justify-between mb-3.5">
-          <div className="flex items-center gap-2 text-slate-300 font-bold text-[11px] uppercase tracking-wider">
-            <div className="p-1 rounded-md bg-blue-500/15 text-blue-400">
-              <TrendingUp className="w-3.5 h-3.5" />
-            </div>
-            <span>Active Knowledge</span>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          {popularDiscussions.map((post, idx) => (
-            <div
-              key={post.id}
-              onClick={() => setSelectedPost(post)}
-              className="group cursor-pointer p-2.5 rounded-xl bg-slate-950/40 border border-white/[0.05] hover:border-white/15 hover:bg-slate-900/70 transition-all"
-            >
-              <div className="flex items-center justify-between text-[10px] font-mono mb-1">
-                <span className="font-semibold text-slate-400">#{idx + 1}</span>
-                <span className="text-slate-400 text-[10px]">
-                  {post.channelName}
-                </span>
-              </div>
-
-              <h5 className="font-medium text-slate-200 text-xs group-hover:text-slate-100 transition-colors line-clamp-2 leading-snug">
-                {post.title}
-              </h5>
-
-              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 pt-1.5 border-t border-white/[0.06] font-mono">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1 text-slate-300">
-                    <ThumbsUp className="w-3 h-3 text-slate-400" /> {post.votes}
-                  </span>
-                  <span className="flex items-center gap-1 text-slate-300">
-                    <MessageSquare className="w-3 h-3 text-slate-400" /> {post.commentCount}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-1 text-slate-400">
-                  <Eye className="w-3 h-3 text-slate-400" />
-                  <span>{post.views}</span>
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 

@@ -437,6 +437,7 @@ export const AdminDashboardPage = () => {
                         className="w-full bg-slate-950/90 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-slate-100 focus:outline-none focus:border-rose-500/60 cursor-pointer"
                       >
                         <option value="FACULTY">FACULTY (Professor, HOD, Counselor)</option>
+                        <option value="VOLUNTEER">VOLUNTEER (Student Volunteer & Noticeboard Manager)</option>
                         <option value="ADMIN">ADMIN (Central IT Superadmin)</option>
                       </select>
                     </div>
@@ -551,6 +552,8 @@ export const AdminDashboardPage = () => {
                               <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold ${
                                 inv.role === 'ADMIN'
                                   ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  : inv.role === 'VOLUNTEER'
+                                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                                   : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                               }`}>
                                 {inv.role}
@@ -617,7 +620,7 @@ export const AdminDashboardPage = () => {
 
                 {/* Role Filter Chips */}
                 <div className="flex items-center gap-1.5 text-xs">
-                  {['ALL', 'STUDENT', 'FACULTY', 'ADMIN'].map(r => (
+                  {['ALL', 'STUDENT', 'VOLUNTEER', 'FACULTY', 'ADMIN'].map(r => (
                     <button
                       key={r}
                       onClick={() => setRoleFilter(r)}
@@ -682,6 +685,8 @@ export const AdminDashboardPage = () => {
                                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                                 : u.role === 'FACULTY'
                                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : u.role === 'VOLUNTEER'
+                                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                                 : 'bg-slate-800 text-slate-300 border border-white/10'
                             }`}>
                               {u.role}
@@ -706,6 +711,7 @@ export const AdminDashboardPage = () => {
                               className="bg-slate-900 border border-white/10 rounded-lg px-2 py-1 text-[11px] font-mono text-slate-200 focus:outline-none cursor-pointer"
                             >
                               <option value="STUDENT">STUDENT</option>
+                              <option value="VOLUNTEER">VOLUNTEER</option>
                               <option value="FACULTY">FACULTY</option>
                               <option value="ADMIN">ADMIN</option>
                             </select>

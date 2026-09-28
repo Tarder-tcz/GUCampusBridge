@@ -342,6 +342,56 @@ export const api = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch faculty responses audit log');
     return data;
+  },
+
+  // Noticeboard API Methods
+  async getNotices(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.category && filters.category !== 'ALL') params.append('category', filters.category);
+    if (filters.department && filters.department !== 'ALL') params.append('department', filters.department);
+    if (filters.search && filters.search.trim()) params.append('search', filters.search.trim());
+    if (filters.includeExpired) params.append('includeExpired', 'true');
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/notices${queryStr}`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch notices');
+    return data;
+  },
+
+  async createNotice(noticeData) {
+    const res = await fetch(`${API_BASE}/notices`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(noticeData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to publish notice');
+    return data;
+  },
+
+  async updateNotice(id, noticeData) {
+    const res = await fetch(`${API_BASE}/notices/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(noticeData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update notice');
+    return data;
+  },
+
+  async deleteNotice(id) {
+    const res = await fetch(`${API_BASE}/notices/${id}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete notice');
+    return data;
   }
 };
+
 

@@ -274,6 +274,8 @@ export const Header = () => {
                               ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                               : userState.role === 'FACULTY'
                               ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                              : userState.role === 'VOLUNTEER'
+                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
                               : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
                           }`}>
                             {userState.role || 'STUDENT'}

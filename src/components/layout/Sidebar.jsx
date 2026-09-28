@@ -49,11 +49,11 @@ export const SidebarContent = ({ onSelect }) => {
     userState
   } = useForum();
 
-  const isStudent = userState && userState.role === 'STUDENT';
+  const isStudent = userState && (userState.role === 'STUDENT' || userState.role === 'VOLUNTEER');
 
   return (
     <div className="glass-panel rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl divide-y divide-white/[0.06]">
-      
+
       {/* 0. 1-on-1 Mentor Connect, Staff Portal & Admin Entry */}
       <div className="p-3 bg-slate-950/40 space-y-2.5">
         {/* Superadmin Exclusive Control Center */}
@@ -63,18 +63,16 @@ export const SidebarContent = ({ onSelect }) => {
               navigate('/admin');
               if (onSelect) onSelect();
             }}
-            className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${
-              isAdminActive
+            className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${isAdminActive
                 ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-rose-950/60 border-purple-500/70 shadow-lg shadow-purple-950/40 ring-1 ring-purple-500/50'
                 : 'bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 hover:to-purple-950/50 border-purple-500/40 hover:border-purple-400/60 shadow-md shadow-purple-950/20'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${
-                isAdminActive
+              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${isAdminActive
                   ? 'bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-500/50'
                   : 'bg-purple-500/20 border-purple-500/40 text-purple-300'
-              }`}>
+                }`}>
                 <ShieldAlert className="w-4 h-4" />
               </div>
               <div className="text-left leading-tight">
@@ -96,18 +94,16 @@ export const SidebarContent = ({ onSelect }) => {
             navigate('/mentor-connect');
             if (onSelect) onSelect();
           }}
-          className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${
-            isMentorConnectActive
+          className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${isMentorConnectActive
               ? 'bg-gradient-to-br from-rose-950/70 via-slate-900 to-rose-900/40 border-rose-500/70 shadow-lg shadow-rose-950/40 ring-1 ring-rose-500/40'
               : 'bg-gradient-to-br from-slate-900 via-slate-900/90 to-rose-950/40 hover:to-rose-900/50 border-rose-500/30 hover:border-rose-500/50 shadow-md shadow-rose-950/20'
-          }`}
+            }`}
         >
           <div className="flex items-center gap-2.5">
-            <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${
-              isMentorConnectActive
+            <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${isMentorConnectActive
                 ? 'bg-rose-500 text-white border-rose-400'
                 : 'bg-rose-500/20 border-rose-500/30 text-rose-400'
-            }`}>
+              }`}>
               <UserCheck className="w-4 h-4" />
             </div>
             <div className="text-left leading-tight">
@@ -190,11 +186,10 @@ export const SidebarContent = ({ onSelect }) => {
                   if (location.pathname !== '/') navigate('/');
                   if (onSelect) onSelect();
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer group ${
-                  isActive
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer group ${isActive
                     ? 'bg-rose-500/15 text-white font-semibold border border-rose-500/30 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className={`p-1 rounded-lg transition-colors ${isActive ? 'bg-rose-500/20 text-rose-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
@@ -216,7 +211,7 @@ export const SidebarContent = ({ onSelect }) => {
         <div className="flex items-center justify-between mb-2.5">
           <div className="flex items-center gap-2 text-slate-300 font-bold text-[11px] uppercase tracking-wider">
             <Tag className="w-3.5 h-3.5 text-slate-400" />
-            <span>Academic Tags</span>
+            <span>Tags</span>
           </div>
           {selectedTag && (
             <button
@@ -244,11 +239,10 @@ export const SidebarContent = ({ onSelect }) => {
                   if (location.pathname !== '/') navigate('/');
                   if (onSelect) onSelect();
                 }}
-                className={`px-2 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${
-                  isSelected
+                className={`px-2 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${isSelected
                     ? 'bg-rose-600 text-white font-bold shadow-md shadow-rose-950/50 border border-rose-400/40'
                     : 'bg-slate-900/90 text-slate-400 border border-white/[0.07] hover:border-white/20 hover:text-slate-200 hover:bg-slate-800/60'
-                }`}
+                  }`}
               >
                 #{tag.name}
               </button>

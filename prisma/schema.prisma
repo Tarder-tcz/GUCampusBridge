@@ -9,6 +9,7 @@ generator client {
 
 enum Role {
   STUDENT
+  VOLUNTEER
   FACULTY
   ADMIN
 }
@@ -36,6 +37,7 @@ model User {
   savedPostIds      String    @default("[]")
   posts                      Post[]
   comments                   Comment[]
+  notices                    Notice[]
   mentorshipRequestsSent     MentorshipRequest[] @relation("StudentMentorshipRequests")
   mentorshipRequestsReceived MentorshipRequest[] @relation("FacultyMentorshipRequests")
   createdAt                  DateTime  @default(now())
@@ -153,4 +155,27 @@ model AuditLog {
   metadata  String?  @default("{}")
   createdAt DateTime @default(now())
 }
+
+model Notice {
+  id           String    @id @default(uuid())
+  title        String
+  content      String
+  category     String    @default("NOTICE") // "NOTICE" | "EVENT" | "ANNOUNCEMENT" | "ACADEMIC" | "URGENT"
+  authorId     String?
+  author       User?     @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  authorName   String
+  authorHandle String?
+  authorRole   String    // "FACULTY" | "VOLUNTEER" | "ADMIN"
+  authorBadge  String?
+  authorAvatar String?
+  department   String?
+  isPinned     Boolean   @default(false)
+  pinnedUntil  DateTime?
+  expiresAt    DateTime?
+  eventDate    String?
+  location     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
 

@@ -27,6 +27,37 @@ export const ForumProvider = ({ children }) => {
   const [isStaffPortalOpen, setIsStaffPortalOpen] = useState(false);
   const [isFacultyResponsesOpen, setIsFacultyResponsesOpen] = useState(false);
 
+  // Noticeboard State
+  const [noticesData, setNoticesData] = useState({ pinned: [], latest: [], all: [] });
+  const [loadingNotices, setLoadingNotices] = useState(false);
+  const [isNoticeDetailModalOpen, setIsNoticeDetailModalOpen] = useState(false);
+  const [selectedNotice, setSelectedNotice] = useState(null);
+  const [noticeModalInitialTab, setNoticeModalInitialTab] = useState('all'); // 'all' | 'pinned' | 'events'
+  const [isCreateNoticeModalOpen, setIsCreateNoticeModalOpen] = useState(false);
+  const [editingNotice, setEditingNotice] = useState(null);
+
+  const fetchNotices = async (filters = {}) => {
+    try {
+      setLoadingNotices(true);
+      const data = await api.getNotices(filters);
+      if (data) {
+        setNoticesData({
+          pinned: Array.isArray(data.pinned) ? data.pinned : [],
+          latest: Array.isArray(data.latest) ? data.latest : [],
+          all: Array.isArray(data.all) ? data.all : []
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to fetch notices:', err);
+    } finally {
+      setLoadingNotices(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotices();
+  }, []);
+
   const [facultyBookmarks, setFacultyBookmarks] = useState(() => {
     try {
       const saved = localStorage.getItem('gucampusbridge_faculty_bookmarks');
@@ -388,7 +419,9 @@ export const ForumProvider = ({ children }) => {
   const isAuthenticated = !!token && !userState?.isGuest;
   const isAdmin = isAuthenticated && currentRole === 'ADMIN';
   const isFaculty = isAuthenticated && (currentRole === 'FACULTY' || currentRole === 'ADMIN');
-  const isStudent = isAuthenticated && currentRole === 'STUDENT';
+  const isVolunteer = isAuthenticated && currentRole === 'VOLUNTEER';
+  const isStudent = isAuthenticated && (currentRole === 'STUDENT' || currentRole === 'VOLUNTEER');
+  const canManageNotices = isAuthenticated && (currentRole === 'VOLUNTEER' || currentRole === 'FACULTY' || currentRole === 'ADMIN');
 
   const hasRole = (allowedRoles = []) => {
     if (!isAuthenticated) return false;
@@ -417,6 +450,8 @@ export const ForumProvider = ({ children }) => {
     setUserState(GUEST_USER);
     setIsStaffPortalOpen(false);
     setIsFacultyResponsesOpen(false);
+    setIsCreateNoticeModalOpen(false);
+    setIsNoticeDetailModalOpen(false);
   };
 
   const updateProfile = async (profileData) => {
@@ -469,7 +504,9 @@ export const ForumProvider = ({ children }) => {
         userRole: currentRole,
         isAdmin,
         isFaculty,
+        isVolunteer,
         isStudent,
+        canManageNotices,
         hasRole,
         verifyMfaChallenge,
         login,
@@ -485,6 +522,20 @@ export const ForumProvider = ({ children }) => {
         addCommentToPost,
         deleteComment,
         toggleMarkSolution,
+        noticesData,
+        setNoticesData,
+        loadingNotices,
+        fetchNotices,
+        isNoticeDetailModalOpen,
+        setIsNoticeDetailModalOpen,
+        selectedNotice,
+        setSelectedNotice,
+        noticeModalInitialTab,
+        setNoticeModalInitialTab,
+        isCreateNoticeModalOpen,
+        setIsCreateNoticeModalOpen,
+        editingNotice,
+        setEditingNotice
       }}
     >
       {children}
