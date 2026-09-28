@@ -8,16 +8,14 @@ import {
   MessageSquareQuote,
   Bookmark,
   Search,
-  Calendar,
-  Clock,
-  User,
   Sparkles,
   Copy,
   Check,
   ArrowUpDown,
   Lock,
   LogIn,
-  ShieldCheck
+  ShieldCheck,
+  BadgeCheck
 } from 'lucide-react';
 
 export const FacultyResponsesModal = () => {
@@ -89,21 +87,23 @@ export const FacultyResponsesModal = () => {
     setTimeout(() => setCopiedId(null), 2200);
   };
 
+  const safeBookmarks = useMemo(() => Array.isArray(facultyBookmarks) ? facultyBookmarks : [], [facultyBookmarks]);
+
   // Filter and sort responses
   const filteredResponses = useMemo(() => {
-    let list = [...responses];
+    let list = Array.isArray(responses) ? [...responses] : [];
 
     // 1. Tab filter: All vs Bookmarked
     if (activeTab === 'BOOKMARKED') {
-      list = list.filter(r => facultyBookmarks.includes(r.id));
+      list = list.filter(r => r && r.id && safeBookmarks.includes(r.id));
     }
 
     // 2. Department filter
     if (selectedDepartment !== 'ALL') {
       const deptKey = selectedDepartment.toLowerCase();
       list = list.filter(r =>
-        (r.facultyDepartment && r.facultyDepartment.toLowerCase().includes(deptKey)) ||
-        (r.studentDepartment && r.studentDepartment.toLowerCase().includes(deptKey))
+        String(r?.facultyDepartment || '').toLowerCase().includes(deptKey) ||
+        String(r?.studentDepartment || '').toLowerCase().includes(deptKey)
       );
     }
 
@@ -111,27 +111,28 @@ export const FacultyResponsesModal = () => {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter(r =>
-        (r.facultyName && r.facultyName.toLowerCase().includes(q)) ||
-        (r.facultyRole && r.facultyRole.toLowerCase().includes(q)) ||
-        (r.studentName && r.studentName.toLowerCase().includes(q)) ||
-        (r.inquiryTopic && r.inquiryTopic.toLowerCase().includes(q)) ||
-        (r.responseContent && r.responseContent.toLowerCase().includes(q))
+        String(r?.facultyName || '').toLowerCase().includes(q) ||
+        String(r?.facultyRole || '').toLowerCase().includes(q) ||
+        String(r?.studentName || '').toLowerCase().includes(q) ||
+        String(r?.inquiryTopic || '').toLowerCase().includes(q) ||
+        String(r?.responseContent || '').toLowerCase().includes(q)
       );
     }
 
     // 4. Sort
     list.sort((a, b) => {
-      const dateA = new Date(a.createdAt || 0).getTime();
-      const dateB = new Date(b.createdAt || 0).getTime();
+      const dateA = new Date(a?.createdAt || 0).getTime() || 0;
+      const dateB = new Date(b?.createdAt || 0).getTime() || 0;
       return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
     });
 
     return list;
-  }, [responses, activeTab, selectedDepartment, searchQuery, sortOrder, facultyBookmarks]);
+  }, [responses, activeTab, selectedDepartment, searchQuery, sortOrder, safeBookmarks]);
 
   const bookmarkedCount = useMemo(() => {
-    return responses.filter(r => facultyBookmarks.includes(r.id)).length;
-  }, [responses, facultyBookmarks]);
+    if (!Array.isArray(responses)) return 0;
+    return responses.filter(r => r && r.id && safeBookmarks.includes(r.id)).length;
+  }, [responses, safeBookmarks]);
 
   if (!isFacultyResponsesOpen) return null;
 
@@ -358,7 +359,7 @@ export const FacultyResponsesModal = () => {
               ) : (
                 <div className="space-y-4">
                   {filteredResponses.map((item) => {
-                    const isBookmarked = facultyBookmarks.includes(item.id);
+                    const isBookmarked = safeBookmarks.includes(item.id);
                     const isCopied = copiedId === item.id;
                     const formattedDate = item.createdAt
                       ? new Date(item.createdAt).toLocaleDateString('en-US', {
