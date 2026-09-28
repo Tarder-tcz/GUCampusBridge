@@ -19,10 +19,38 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'GU_CAMPUS_BRIDGE_SECRET_KEY_2026';
 const DEFAULT_AVATAR = 'https://static.vecteezy.com/system/resources/thumbnails/009/292/244/small/default-avatar-icon-of-social-media-user-vector.jpg';
 
-// Auto-initialize SQLite database schema and default records on boot
+// Auto-initialize database schema, default records, and reconcile comment counters on boot
+async function reconcileCommentCounts() {
+  try {
+    const posts = await prisma.post.findMany({
+      select: {
+        id: true,
+        commentCount: true,
+        _count: { select: { comments: true } }
+      }
+    });
+    let updatedCount = 0;
+    for (const post of posts) {
+      if (post.commentCount !== post._count.comments) {
+        await prisma.post.update({
+          where: { id: post.id },
+          data: { commentCount: post._count.comments }
+        });
+        updatedCount++;
+      }
+    }
+    if (updatedCount > 0) {
+      console.log(`✅ Reconciled commentCount for ${updatedCount} posts to match actual comments in database!`);
+    }
+  } catch (err) {
+    console.warn('Comment count reconcile notice:', err.message);
+  }
+}
+
 try {
   console.log('Ensuring database schema and seeds are initialized...');
   execSync('node prisma/seed.js', { stdio: 'inherit' });
+  reconcileCommentCounts();
 } catch (e) {
   console.warn('Database startup check notice:', e.message);
 }
@@ -233,6 +261,10 @@ function formatPost(post) {
     parsedTags = [];
   }
 
+  const actualCommentCount = post._count?.comments !== undefined
+    ? post._count.comments
+    : (Array.isArray(post.comments) ? post.comments.length : (post.commentCount ?? 0));
+
   return {
     id: post.id,
     channelId: post.channelId,
@@ -248,7 +280,7 @@ function formatPost(post) {
     },
     createdAt: formatTimeAgo(post.createdAt),
     votes: post.votes,
-    commentCount: post.commentCount,
+    commentCount: actualCommentCount,
     views: post.views,
     tags: parsedTags,
     isSolved: post.isSolved,
@@ -1027,6 +1059,9 @@ app.get('/api/posts', async (req, res) => {
     const posts = await prisma.post.findMany({
       orderBy: { id: 'desc' },
       include: {
+        _count: {
+          select: { comments: true }
+        },
         comments: {
           include: {
             replies: {
@@ -1051,6 +1086,9 @@ app.get('/api/posts/:id', async (req, res) => {
     const post = await prisma.post.findUnique({
       where: { id },
       include: {
+        _count: {
+          select: { comments: true }
+        },
         comments: {
           include: {
             replies: {
@@ -1262,14 +1300,18 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
       }
     });
 
+    const totalComments = await prisma.comment.count({ where: { postId: id } });
     await prisma.post.update({
       where: { id },
-      data: { commentCount: post.commentCount + 1 }
+      data: { commentCount: totalComments }
     });
 
     const updatedPost = await prisma.post.findUnique({
       where: { id },
       include: {
+        _count: {
+          select: { comments: true }
+        },
         comments: {
           include: {
             replies: { include: { replies: true } }
@@ -1281,6 +1323,41 @@ app.post('/api/posts/:id/comments', authenticateToken, async (req, res) => {
     res.status(201).json(formatPost(updatedPost));
   } catch (err) {
     res.status(500).json({ error: 'Failed to add comment' });
+  }
+});
+
+// DELETE /api/posts/:postId/comments/:commentId - Delete comment and recalculate comment count
+app.delete('/api/posts/:postId/comments/:commentId', authenticateToken, requireAuth, async (req, res) => {
+  try {
+    const { postId, commentId } = req.params;
+    const comment = await prisma.comment.findUnique({ where: { id: commentId } });
+    if (!comment) return res.status(404).json({ error: 'Comment not found' });
+
+    // Allow author of comment or ADMIN
+    if (comment.authorId !== req.user.id && req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Unauthorized to delete this comment' });
+    }
+
+    await prisma.comment.delete({ where: { id: commentId } });
+    const remainingCount = await prisma.comment.count({ where: { postId } });
+    await prisma.post.update({
+      where: { id: postId },
+      data: { commentCount: remainingCount }
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'COMMENT_DELETED',
+      resource: `Post:${postId}/Comment:${commentId}`,
+      metadata: { postId, commentId, remainingCount },
+      req
+    });
+
+    res.json({ message: 'Comment deleted successfully', remainingCount });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to delete comment' });
   }
 });
 
@@ -1337,21 +1414,53 @@ app.get('/api/mentors', async (req, res) => {
   }
 });
 
-// GET /api/faculty-responses - Fetch all faculty responses to students, sorted newest to oldest
-app.get('/api/faculty-responses', async (req, res) => {
+// GET /api/faculty-responses - Fetch faculty responses (Account Specific)
+app.get('/api/faculty-responses', authenticateToken, requireAuth, async (req, res) => {
   try {
     const { department, search } = req.query;
 
+    let whereClause = {
+      replyMessage: { not: null }
+    };
+
+    if (department && department !== 'all' && department !== 'All Departments') {
+      whereClause.OR = [
+        { studentDepartment: { contains: department, mode: 'insensitive' } },
+        { mentor: { department: { contains: department, mode: 'insensitive' } } }
+      ];
+    }
+
+    // Role-based account-specific scoping:
+    if (req.user.role === 'STUDENT') {
+      // Students can ONLY view responses directed to their account
+      const studentConditions = [
+        { studentId: req.user.id }
+      ];
+      if (req.user.email) {
+        studentConditions.push({ studentEmail: req.user.email });
+      }
+      const userProfile = await prisma.user.findUnique({ where: { id: req.user.id } });
+      if (userProfile?.name) {
+        studentConditions.push({ studentName: { equals: userProfile.name, mode: 'insensitive' } });
+      }
+
+      if (whereClause.OR) {
+        whereClause.AND = [
+          { OR: whereClause.OR },
+          { OR: studentConditions }
+        ];
+        delete whereClause.OR;
+      } else {
+        whereClause.OR = studentConditions;
+      }
+    } else if (req.user.role === 'FACULTY') {
+      // Faculty can view responses authored by or assigned to them
+      whereClause.mentorId = req.user.id;
+    }
+    // ADMIN can view all responses
+
     const mentorshipResponses = await prisma.mentorshipRequest.findMany({
-      where: {
-        replyMessage: { not: null },
-        ...(department && department !== 'all' && department !== 'All Departments' ? {
-          OR: [
-            { studentDepartment: { contains: department, mode: 'insensitive' } },
-            { mentor: { department: { contains: department, mode: 'insensitive' } } }
-          ]
-        } : {})
-      },
+      where: whereClause,
       include: {
         mentor: {
           select: {
@@ -1362,6 +1471,16 @@ app.get('/api/faculty-responses', async (req, res) => {
             department: true,
             avatar: true,
             specialTag: true
+          }
+        },
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            handle: true,
+            avatar: true,
+            department: true
           }
         }
       },
@@ -1376,6 +1495,7 @@ app.get('/api/faculty-responses', async (req, res) => {
       facultyDepartment: r.mentor?.department || r.studentDepartment,
       facultyAvatar: r.mentor?.avatar || DEFAULT_AVATAR,
       facultySpecialTag: r.mentor?.specialTag,
+      studentId: r.studentId,
       studentName: r.studentName,
       studentDepartment: r.studentDepartment,
       admissionNo: r.admissionNo,
@@ -1398,9 +1518,7 @@ app.get('/api/faculty-responses', async (req, res) => {
       );
     }
 
-    // Sort newest at the top to oldest at the bottom
     formatted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
     res.json(formatted);
   } catch (err) {
     console.error('Error fetching faculty responses:', err);
@@ -1408,8 +1526,8 @@ app.get('/api/faculty-responses', async (req, res) => {
   }
 });
 
-// POST /api/mentorship-requests - Submit student 1-on-1 request
-app.post('/api/mentorship-requests', async (req, res) => {
+// POST /api/mentorship-requests - Submit student 1-on-1 request (Linked to student account)
+app.post('/api/mentorship-requests', authenticateToken, async (req, res) => {
   try {
     const { admissionNo, studentName, contactNo, studentDepartment, reason, mentorId } = req.body;
 
@@ -1427,17 +1545,42 @@ app.post('/api/mentorship-requests', async (req, res) => {
       return res.status(404).json({ error: 'Selected faculty mentor not found or inactive' });
     }
 
+    const studentUser = req.user && req.user.id !== 'usr_me'
+      ? await prisma.user.findUnique({ where: { id: req.user.id } })
+      : null;
+
     const request = await prisma.mentorshipRequest.create({
       data: {
         admissionNo,
-        studentName,
+        studentName: studentUser?.name || studentName,
+        studentEmail: studentUser?.email || null,
         contactNo,
-        studentDepartment: studentDepartment || 'General Student',
+        studentDepartment: studentDepartment || studentUser?.department || 'General Student',
         reason,
+        studentId: studentUser ? studentUser.id : null,
         mentorId: mentor.id,
         mentorName: mentor.name,
         status: 'PENDING'
       }
+    });
+
+    await createAuditLog({
+      userId: studentUser?.id || null,
+      userEmail: studentUser?.email || null,
+      userRole: studentUser?.role || 'STUDENT',
+      action: 'MENTORSHIP_REQUEST_SUBMITTED',
+      resource: `MentorshipRequest:${request.id}`,
+      metadata: {
+        requestId: request.id,
+        studentName: request.studentName,
+        admissionNo: request.admissionNo,
+        studentEmail: request.studentEmail,
+        studentDepartment: request.studentDepartment,
+        mentorId: mentor.id,
+        mentorName: mentor.name,
+        reason: request.reason
+      },
+      req
     });
 
     res.status(201).json({
@@ -1497,35 +1640,60 @@ app.post('/api/staff/login', async (req, res) => {
   }
 });
 
-// GET /api/staff/requests - Fetch incoming requests for logged in faculty mentor
-app.get('/api/staff/requests', async (req, res) => {
+// GET /api/staff/requests - Fetch incoming requests for logged in faculty mentor or admin
+app.get('/api/staff/requests', authenticateToken, requireRole('FACULTY', 'ADMIN'), async (req, res) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token) return res.status(401).json({ error: 'Faculty authentication token missing' });
-
-    const decoded = jwt.verify(token, JWT_SECRET);
-    if (!decoded || (decoded.role !== 'FACULTY' && decoded.role !== 'ADMIN' && decoded.role !== 'STAFF')) {
-      return res.status(403).json({ error: 'Access denied: Faculty login required' });
-    }
+    const isSuperAdmin = req.user.role === 'ADMIN';
 
     const requests = await prisma.mentorshipRequest.findMany({
-      where: decoded.role === 'ADMIN' ? {} : { mentorId: decoded.id },
+      where: isSuperAdmin ? {} : { mentorId: req.user.id },
+      include: {
+        student: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            handle: true,
+            avatar: true,
+            department: true
+          }
+        },
+        mentor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            department: true,
+            avatar: true
+          }
+        }
+      },
       orderBy: { createdAt: 'desc' }
     });
 
     res.json(requests);
   } catch (err) {
+    console.error('Failed to fetch faculty requests:', err);
     res.status(500).json({ error: 'Failed to fetch faculty requests' });
   }
 });
 
-// PUT /api/staff/requests/:id - Update status and send reply answer
-app.put('/api/staff/requests/:id', async (req, res) => {
+// PUT /api/staff/requests/:id - Update status and send reply answer (Faculty/Admin only)
+app.put('/api/staff/requests/:id', authenticateToken, requireRole('FACULTY', 'ADMIN'), async (req, res) => {
   try {
     const { id } = req.params;
     const { status, replyMessage } = req.body;
 
+    const existingRequest = await prisma.mentorshipRequest.findUnique({ where: { id } });
+    if (!existingRequest) {
+      return res.status(404).json({ error: 'Mentorship request not found' });
+    }
+
+    if (req.user.role === 'FACULTY' && existingRequest.mentorId !== req.user.id) {
+      return res.status(403).json({ error: 'Forbidden: You can only respond to requests assigned to you.' });
+    }
+
+    const previousStatus = existingRequest.status;
     const updated = await prisma.mentorshipRequest.update({
       where: { id },
       data: {
@@ -1534,12 +1702,150 @@ app.put('/api/staff/requests/:id', async (req, res) => {
       }
     });
 
+    // Record immutable audit log entry for this faculty response for the student
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'FACULTY_RESPONSE_RECORDED',
+      resource: `MentorshipRequest:${id}`,
+      metadata: {
+        requestId: id,
+        studentId: existingRequest.studentId,
+        studentName: existingRequest.studentName,
+        studentEmail: existingRequest.studentEmail,
+        admissionNo: existingRequest.admissionNo,
+        studentDepartment: existingRequest.studentDepartment,
+        mentorId: existingRequest.mentorId,
+        mentorName: existingRequest.mentorName,
+        facultyEmail: req.user.email,
+        previousStatus,
+        newStatus: status || previousStatus,
+        replyMessage: replyMessage !== undefined ? replyMessage : existingRequest.replyMessage,
+        inquiryReason: existingRequest.reason,
+        respondedAt: new Date().toISOString()
+      },
+      req
+    });
+
     res.json({
       message: 'Request updated successfully',
       request: updated
     });
   } catch (err) {
+    console.error('Failed to update mentorship request:', err);
     res.status(500).json({ error: 'Failed to update mentorship request' });
+  }
+});
+
+// GET /api/admin/faculty-responses/audit - View audit log for faculty responses for each student (Admin only)
+app.get('/api/admin/faculty-responses/audit', authenticateToken, requireRole('ADMIN'), async (req, res) => {
+  try {
+    const { student, mentorId, status } = req.query;
+
+    const mentorshipRequests = await prisma.mentorshipRequest.findMany({
+      include: {
+        student: {
+          select: { id: true, name: true, email: true, handle: true, department: true, avatar: true }
+        },
+        mentor: {
+          select: { id: true, name: true, email: true, department: true, avatar: true, headline: true }
+        }
+      },
+      orderBy: { updatedAt: 'desc' }
+    });
+
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        action: { in: ['FACULTY_RESPONSE_RECORDED', 'FACULTY_RESPONSE_UPDATED', 'MENTORSHIP_REQUEST_SUBMITTED'] }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200
+    });
+
+    const parsedLogs = auditLogs.map(l => {
+      let meta = {};
+      try {
+        meta = JSON.parse(l.metadata || '{}');
+      } catch (e) {
+        meta = {};
+      }
+      return {
+        ...l,
+        metadataParsed: meta
+      };
+    });
+
+    let filteredRequests = mentorshipRequests;
+    if (student && student.trim()) {
+      const q = student.trim().toLowerCase();
+      filteredRequests = filteredRequests.filter(r =>
+        (r.studentName && r.studentName.toLowerCase().includes(q)) ||
+        (r.admissionNo && r.admissionNo.toLowerCase().includes(q)) ||
+        (r.studentEmail && r.studentEmail.toLowerCase().includes(q)) ||
+        (r.studentDepartment && r.studentDepartment.toLowerCase().includes(q))
+      );
+    }
+    if (mentorId && mentorId !== 'all') {
+      filteredRequests = filteredRequests.filter(r => r.mentorId === mentorId);
+    }
+    if (status && status !== 'all') {
+      filteredRequests = filteredRequests.filter(r => r.status.toUpperCase() === status.toUpperCase());
+    }
+
+    const studentMap = {};
+    for (const reqItem of filteredRequests) {
+      const studentKey = reqItem.admissionNo || reqItem.studentEmail || reqItem.studentName;
+      if (!studentMap[studentKey]) {
+        studentMap[studentKey] = {
+          studentKey,
+          studentName: reqItem.studentName,
+          admissionNo: reqItem.admissionNo,
+          studentEmail: reqItem.studentEmail || reqItem.student?.email || 'N/A',
+          studentDepartment: reqItem.studentDepartment,
+          totalInquiries: 0,
+          resolvedCount: 0,
+          pendingCount: 0,
+          requests: [],
+          auditTrail: []
+        };
+      }
+      studentMap[studentKey].totalInquiries += 1;
+      if (reqItem.status === 'RESOLVED') studentMap[studentKey].resolvedCount += 1;
+      if (reqItem.status === 'PENDING') studentMap[studentKey].pendingCount += 1;
+
+      const relatedLogs = parsedLogs.filter(log =>
+        log.metadataParsed?.requestId === reqItem.id ||
+        log.metadataParsed?.admissionNo === reqItem.admissionNo ||
+        (log.resource && log.resource.includes(reqItem.id))
+      );
+
+      studentMap[studentKey].requests.push({
+        ...reqItem,
+        relatedAuditLogs: relatedLogs
+      });
+      studentMap[studentKey].auditTrail.push(...relatedLogs);
+    }
+
+    const studentsList = Object.values(studentMap);
+
+    const summary = {
+      totalInquiries: mentorshipRequests.length,
+      totalResponses: mentorshipRequests.filter(r => r.replyMessage !== null).length,
+      resolvedCount: mentorshipRequests.filter(r => r.status === 'RESOLVED').length,
+      pendingCount: mentorshipRequests.filter(r => r.status === 'PENDING').length,
+      uniqueStudentsCount: new Set(mentorshipRequests.map(r => r.admissionNo || r.studentName)).size
+    };
+
+    res.json({
+      summary,
+      students: studentsList,
+      rawRequests: filteredRequests,
+      auditLogs: parsedLogs
+    });
+  } catch (err) {
+    console.error('Error fetching faculty response audit:', err);
+    res.status(500).json({ error: 'Failed to fetch faculty response audit log' });
   }
 });
 

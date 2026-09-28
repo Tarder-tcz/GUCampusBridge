@@ -36,6 +36,7 @@ model User {
   savedPostIds      String    @default("[]")
   posts                      Post[]
   comments                   Comment[]
+  mentorshipRequestsSent     MentorshipRequest[] @relation("StudentMentorshipRequests")
   mentorshipRequestsReceived MentorshipRequest[] @relation("FacultyMentorshipRequests")
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
@@ -111,9 +112,12 @@ model MentorshipRequest {
   id                String   @id @default(uuid())
   admissionNo       String
   studentName       String
+  studentEmail      String?
   contactNo         String
   studentDepartment String
   reason            String
+  studentId         String?
+  student           User?    @relation("StudentMentorshipRequests", fields: [studentId], references: [id], onDelete: SetNull)
   mentorId          String
   mentor            User     @relation("FacultyMentorshipRequests", fields: [mentorId], references: [id], onDelete: Cascade)
   mentorName        String

@@ -6,30 +6,22 @@ import {
   X,
   ShieldCheck,
   Lock,
-  Key,
-  Mail,
   CheckCircle2,
   XCircle,
-  MessageSquare,
   Send,
-  LogOut,
-  Clock,
-  User
+  LogIn
 } from 'lucide-react';
 
 export const StaffPortalModal = () => {
-  const { isStaffPortalOpen, setIsStaffPortalOpen } = useForum();
-
-  const [staffToken, setStaffToken] = useState(() => localStorage.getItem('gucampusbridge_staff_token'));
-  const [staffUser, setStaffUser] = useState(() => {
-    const saved = localStorage.getItem('gucampusbridge_staff_user');
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  // Login form state
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState('');
+  const {
+    isStaffPortalOpen,
+    setIsStaffPortalOpen,
+    userState,
+    isFaculty,
+    isAdmin,
+    setIsAuthModalOpen,
+    setAuthModalMode
+  } = useForum();
 
   // Dashboard requests state
   const [requests, setRequests] = useState([]);
@@ -38,14 +30,16 @@ export const StaffPortalModal = () => {
   const [loading, setLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  // Fetch Requests when logged in as staff
+  const isAuthorized = (isFaculty || isAdmin) && userState && !userState.isGuest;
+
+  // Fetch Requests when logged in as staff/faculty
   useEffect(() => {
     async function fetchRequests() {
-      if (staffToken && isStaffPortalOpen) {
+      if (isAuthorized && isStaffPortalOpen) {
         try {
           setLoading(true);
-          const data = await api.getStaffRequests(staffToken);
-          setRequests(data);
+          const data = await api.getStaffRequests();
+          setRequests(Array.isArray(data) ? data : []);
         } catch (err) {
           console.warn('Failed to load staff requests:', err);
         } finally {
@@ -54,40 +48,14 @@ export const StaffPortalModal = () => {
       }
     }
     fetchRequests();
-  }, [staffToken, isStaffPortalOpen]);
+  }, [isAuthorized, isStaffPortalOpen]);
 
   if (!isStaffPortalOpen) return null;
-
-  const handleStaffLogin = async (e) => {
-    e.preventDefault();
-    setLoginError('');
-    setLoading(true);
-    try {
-      const data = await api.staffLogin(email, password);
-      if (data && data.token && data.staff) {
-        setStaffToken(data.token);
-        setStaffUser(data.staff);
-        localStorage.setItem('gucampusbridge_staff_token', data.token);
-        localStorage.setItem('gucampusbridge_staff_user', JSON.stringify(data.staff));
-      }
-    } catch (err) {
-      setLoginError(err.message || 'Invalid Faculty Email or Password');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleStaffLogout = () => {
-    setStaffToken(null);
-    setStaffUser(null);
-    localStorage.removeItem('gucampusbridge_staff_token');
-    localStorage.removeItem('gucampusbridge_staff_user');
-  };
 
   const handleUpdateStatus = async (requestId, newStatus) => {
     try {
       setActionLoadingId(requestId);
-      const res = await api.updateStaffRequest(requestId, newStatus, undefined, staffToken);
+      const res = await api.updateStaffRequest(requestId, newStatus);
       if (res && res.request) {
         setRequests(prev => prev.map(r => r.id === requestId ? res.request : r));
       }
@@ -104,7 +72,7 @@ export const StaffPortalModal = () => {
 
     try {
       setActionLoadingId(requestId);
-      const res = await api.updateStaffRequest(requestId, 'RESOLVED', replyMessage, staffToken);
+      const res = await api.updateStaffRequest(requestId, 'RESOLVED', replyMessage);
       if (res && res.request) {
         setRequests(prev => prev.map(r => r.id === requestId ? res.request : r));
         setReplyTextMap(prev => ({ ...prev, [requestId]: '' }));
@@ -130,11 +98,14 @@ export const StaffPortalModal = () => {
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-amber-400" />
             <div>
-              <h2 className="text-base font-bold text-slate-100">
-                Faculty & Staff Response Portal
+              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <span>Staff & Faculty Mentorship Portal</span>
+                <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-mono font-medium">
+                  Verified Faculty Only
+                </span>
               </h2>
               <p className="text-[11px] text-slate-400">
-                Manage and respond to student 1-on-1 mentorship requests
+                Directly linked to your active campus account — manage student queries with single sign-on
               </p>
             </div>
           </div>
@@ -149,100 +120,77 @@ export const StaffPortalModal = () => {
         {/* Modal Body */}
         <div className="p-5 overflow-y-auto flex-1">
 
-          {!staffToken || !staffUser ? (
-            /* STAFF LOGIN VIEW */
-            <div className="max-w-md mx-auto py-6 space-y-4">
-              <div className="text-center">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <h3 className="text-base font-bold text-slate-100">Faculty & Staff Login</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Enter your registered Faculty Email ID and Password to manage student mentorship requests.
+          {!isAuthorized ? (
+            /* ACCESS RESTRICTED SCREEN (USER IS NOT LOGGED IN AS FACULTY OR ADMIN) */
+            <div className="max-w-md mx-auto py-10 space-y-5 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+                <Lock className="w-7 h-7" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-100">
+                  Faculty Account Required
+                </h3>
+                <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                  The Faculty Portal is linked strictly to accounts logged into the forum. You are currently{' '}
+                  <strong className="text-slate-200">
+                    {userState && !userState.isGuest ? `logged in as a ${userState.role}` : 'logged out'}
+                  </strong>
+                  . Please sign in with your verified Faculty or Administrator credentials.
                 </p>
               </div>
 
-              {loginError && (
-                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold text-center">
-                  {loginError}
-                </div>
-              )}
-
-              <form onSubmit={handleStaffLogin} className="space-y-3 pt-2">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Faculty Email Address *
-                  </label>
-                  <div className="relative flex items-center">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="e.g. faculty@galgotias.edu"
-                      className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-200 focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Password *
-                  </label>
-                  <div className="relative flex items-center">
-                    <Key className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      className="w-full bg-slate-950 border border-slate-700/80 rounded-xl pl-9 pr-3.5 py-2 text-xs text-slate-200 focus:outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-
+              <div className="flex items-center justify-center gap-3 pt-2">
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-slate-100 hover:bg-white text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs shadow-sm transition-all cursor-pointer"
+                  onClick={() => {
+                    setIsStaffPortalOpen(false);
+                    setAuthModalMode('login');
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer"
                 >
-                  {loading ? 'Authenticating...' : 'Sign In to Faculty Portal'}
+                  <LogIn className="w-4 h-4" />
+                  <span>Sign In as Faculty</span>
                 </button>
-              </form>
+                <button
+                  onClick={() => setIsStaffPortalOpen(false)}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-4 py-2.5 rounded-xl text-xs transition-all cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           ) : (
-            /* LOGGED IN STAFF DASHBOARD VIEW */
+            /* ACTIVE FACULTY / STAFF DASHBOARD (NO SECOND LOGIN REQUIRED) */
             <div className="space-y-4">
-              
-              {/* Staff Profile Header Card */}
+
+              {/* Faculty Account Banner */}
               <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex items-center justify-between gap-4 flex-wrap">
                 <div className="flex items-center gap-3">
                   <img
-                    src={staffUser.avatar || DEFAULT_AVATAR}
+                    src={userState.avatar || DEFAULT_AVATAR}
                     onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
-                    alt={staffUser.name}
+                    alt={userState.name}
                     className="w-12 h-12 rounded-2xl object-cover border border-slate-700 shrink-0"
                   />
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-sm text-slate-100">{staffUser.name}</h3>
+                      <h3 className="font-bold text-sm text-slate-100">{userState.name}</h3>
                       <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                        {staffUser.email || staffUser.badge || 'Faculty'}
+                        {userState.role === 'ADMIN' ? 'Superadmin Advisor' : (userState.badge || 'Faculty Mentor')}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-400">{staffUser.role} • {staffUser.department}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {userState.department} • <span className="font-mono text-slate-300">{userState.email}</span>
+                    </p>
                   </div>
                 </div>
 
-                <button
-                  onClick={handleStaffLogout}
-                  className="flex items-center gap-1.5 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-xl transition-all cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Log Out</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Session Active</span>
+                  </span>
+                </div>
               </div>
 
               {/* Status Filter Tabs */}
@@ -263,7 +211,7 @@ export const StaffPortalModal = () => {
               </div>
 
               {/* Requests List */}
-              <div className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+              <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
                 {loading ? (
                   <div className="text-center py-10 text-slate-400 text-xs">Loading requests...</div>
                 ) : filteredRequests.length > 0 ? (
@@ -303,7 +251,7 @@ export const StaffPortalModal = () => {
 
                         {/* Student Reason */}
                         <div>
-                          <span className="text-[10px] text-slate-400 block mb-1">Student Reason & Query:</span>
+                          <span className="text-[10px] text-slate-400 block mb-1">Student Inquiry:</span>
                           <p className="text-xs text-slate-200 bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 whitespace-pre-line">
                             {req.reason}
                           </p>

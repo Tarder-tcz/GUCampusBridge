@@ -150,7 +150,7 @@ export const api = {
   async submitMentorshipRequest(requestData) {
     const res = await fetch(`${API_BASE}/mentorship-requests`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getHeaders(),
       body: JSON.stringify(requestData),
     });
     const data = await res.json();
@@ -316,6 +316,31 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to fetch faculty responses');
+    return data;
+  },
+
+  async deleteComment(postId, commentId) {
+    const res = await fetch(`${API_BASE}/posts/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete comment');
+    return data;
+  },
+
+  async getFacultyResponsesAudit(filters = {}) {
+    const params = new URLSearchParams();
+    if (filters.student && filters.student.trim()) params.append('student', filters.student.trim());
+    if (filters.mentorId && filters.mentorId !== 'all') params.append('mentorId', filters.mentorId);
+    if (filters.status && filters.status !== 'all') params.append('status', filters.status);
+    const queryStr = params.toString() ? `?${params.toString()}` : '';
+
+    const res = await fetch(`${API_BASE}/admin/faculty-responses/audit${queryStr}`, {
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch faculty responses audit log');
     return data;
   }
 };
