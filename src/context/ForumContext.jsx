@@ -280,6 +280,22 @@ export const ForumProvider = ({ children }) => {
     }
   };
 
+  // Delete Comment and sync counter
+  const deleteComment = async (postId, commentId) => {
+    try {
+      await api.deleteComment(postId, commentId);
+      const freshPosts = await api.getPosts();
+      setPosts(freshPosts);
+      if (selectedPost && selectedPost.id === postId) {
+        const freshPost = await api.getPostById(postId);
+        setSelectedPost(freshPost);
+      }
+    } catch (err) {
+      console.warn('Failed to delete comment:', err);
+      throw err;
+    }
+  };
+
   // Mark Comment as Solution
   const toggleMarkSolution = (postId, commentId) => {
     const markSolutionRecursive = (commentList, targetId) => {
@@ -396,7 +412,11 @@ export const ForumProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem('gucampusbridge_token');
     localStorage.removeItem('gucampusbridge_user');
+    localStorage.removeItem('gucampusbridge_staff_token');
+    localStorage.removeItem('gucampusbridge_staff_user');
     setUserState(GUEST_USER);
+    setIsStaffPortalOpen(false);
+    setIsFacultyResponsesOpen(false);
   };
 
   const updateProfile = async (profileData) => {
@@ -463,6 +483,7 @@ export const ForumProvider = ({ children }) => {
         toggleBookmark,
         addPost,
         addCommentToPost,
+        deleteComment,
         toggleMarkSolution,
       }}
     >

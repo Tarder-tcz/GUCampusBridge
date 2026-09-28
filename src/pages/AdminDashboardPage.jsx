@@ -15,16 +15,17 @@ import {
   Trash2,
   RefreshCw,
   Search,
-  Lock,
   ArrowLeft,
   AlertCircle,
   Clock,
-  Building2,
-  Mail,
   Fingerprint,
-  ChevronRight,
-  ExternalLink,
-  QrCode
+  QrCode,
+  MessageSquareQuote,
+  GraduationCap,
+  CheckCircle2,
+  FileText,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
 const DEPARTMENTS = [
@@ -62,6 +63,19 @@ export const AdminDashboardPage = () => {
   const [auditLogs, setAuditLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
+  // Faculty Responses Audit (Per Student) State
+  const [facultyAuditData, setFacultyAuditData] = useState({
+    summary: { totalInquiries: 0, totalResponses: 0, resolvedCount: 0, pendingCount: 0, uniqueStudentsCount: 0 },
+    students: [],
+    rawRequests: [],
+    auditLogs: []
+  });
+  const [loadingFacultyAudit, setLoadingFacultyAudit] = useState(false);
+  const [studentAuditSearch, setStudentAuditSearch] = useState('');
+  const [statusAuditFilter, setStatusAuditFilter] = useState('all');
+  const [auditViewMode, setAuditViewMode] = useState('students'); // 'students' | 'timeline'
+  const [expandedStudentKey, setExpandedStudentKey] = useState(null);
+
   // MFA State
   const [mfaData, setMfaData] = useState(null);
   const [mfaCode, setMfaCode] = useState('');
@@ -97,7 +111,7 @@ export const AdminDashboardPage = () => {
     }
   };
 
-  // Load Audit Logs
+  // Load Security Audit Logs
   const fetchAuditLogs = async () => {
     try {
       setLoadingLogs(true);
@@ -110,11 +124,37 @@ export const AdminDashboardPage = () => {
     }
   };
 
+  // Load Faculty Responses Audit (Per Student)
+  const fetchFacultyAudit = async () => {
+    try {
+      setLoadingFacultyAudit(true);
+      const data = await api.getFacultyResponsesAudit({
+        student: studentAuditSearch,
+        status: statusAuditFilter
+      });
+      setFacultyAuditData(data || { summary: {}, students: [], rawRequests: [], auditLogs: [] });
+    } catch (err) {
+      console.warn('Failed to load faculty audit:', err);
+    } finally {
+      setLoadingFacultyAudit(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'invites') fetchInvites();
     if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'faculty-audit') fetchFacultyAudit();
     if (activeTab === 'audit') fetchAuditLogs();
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'faculty-audit') {
+      const delay = setTimeout(() => {
+        fetchFacultyAudit();
+      }, 300);
+      return () => clearTimeout(delay);
+    }
+  }, [studentAuditSearch, statusAuditFilter]);
 
   // Handle Create Invite
   const handleCreateInvite = async (e) => {
@@ -288,6 +328,18 @@ export const AdminDashboardPage = () => {
               >
                 <Users className="w-3.5 h-3.5" />
                 <span>Campus User Directory</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('faculty-audit')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+                  activeTab === 'faculty-audit'
+                    ? 'bg-rose-500 text-white shadow-lg shadow-rose-950/40'
+                    : 'bg-slate-900/80 text-slate-400 hover:text-slate-200 border border-white/5'
+                }`}
+              >
+                <MessageSquareQuote className="w-3.5 h-3.5" />
+                <span>Faculty Responses Audit</span>
               </button>
 
               <button
@@ -664,6 +716,364 @@ export const AdminDashboardPage = () => {
                   </table>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB: FACULTY RESPONSES AUDIT (PER STUDENT) */}
+          {/* ========================================================================= */}
+          {activeTab === 'faculty-audit' && (
+            <div className="space-y-6">
+              
+              {/* Top KPI Metrics Overview */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="glass-panel rounded-2xl p-4 border border-white/[0.08] shadow-lg">
+                  <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+                    <span>Total Student Inquiries</span>
+                    <FileText className="w-4 h-4 text-rose-400" />
+                  </div>
+                  <div className="text-2xl font-black text-white mt-2">
+                    {facultyAuditData.summary?.totalInquiries || 0}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">1-on-1 mentorship requests filed</div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-4 border border-white/[0.08] shadow-lg">
+                  <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+                    <span>Faculty Responses Logged</span>
+                    <MessageSquareQuote className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div className="text-2xl font-black text-emerald-400 mt-2">
+                    {facultyAuditData.summary?.totalResponses || 0}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">Official faculty replies recorded</div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-4 border border-white/[0.08] shadow-lg">
+                  <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+                    <span>Unique Students Advised</span>
+                    <GraduationCap className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div className="text-2xl font-black text-white mt-2">
+                    {facultyAuditData.summary?.uniqueStudentsCount || 0}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">Individual student profiles</div>
+                </div>
+
+                <div className="glass-panel rounded-2xl p-4 border border-white/[0.08] shadow-lg">
+                  <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
+                    <span>Resolved Inquiries</span>
+                    <CheckCircle2 className="w-4 h-4 text-teal-400" />
+                  </div>
+                  <div className="text-2xl font-black text-teal-400 mt-2">
+                    {facultyAuditData.summary?.resolvedCount || 0}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">Successfully concluded cases</div>
+                </div>
+              </div>
+
+              {/* Main Audit Control Panel */}
+              <div className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/[0.08] shadow-2xl space-y-5">
+                
+                {/* Header & View Mode Switcher */}
+                <div className="flex items-center justify-between pb-3 border-b border-white/[0.07] flex-wrap gap-3">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <MessageSquareQuote className="w-4 h-4 text-rose-400" />
+                      <span>Audit Log: Faculty Responses Per Student</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Inspect confidential responses provided by faculty mentors to each student, with cryptographic timestamps and actor traceability.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* View Switcher */}
+                    <div className="flex items-center p-1 bg-slate-900 rounded-xl border border-white/10 text-xs">
+                      <button
+                        onClick={() => setAuditViewMode('students')}
+                        className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                          auditViewMode === 'students'
+                            ? 'bg-rose-500 text-white'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        By Student ({facultyAuditData.students?.length || 0})
+                      </button>
+                      <button
+                        onClick={() => setAuditViewMode('timeline')}
+                        className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                          auditViewMode === 'timeline'
+                            ? 'bg-rose-500 text-white'
+                            : 'text-slate-400 hover:text-white'
+                        }`}
+                      >
+                        Event Timeline ({facultyAuditData.auditLogs?.length || 0})
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={fetchFacultyAudit}
+                      className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 border border-white/10 transition-all cursor-pointer"
+                      title="Refresh Audit Data"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${loadingFacultyAudit ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filters Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Student Search */}
+                  <div className="sm:col-span-2 relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={studentAuditSearch}
+                      onChange={(e) => setStudentAuditSearch(e.target.value)}
+                      placeholder="Filter by student name, admission number, or department..."
+                      className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-rose-500/60"
+                    />
+                  </div>
+
+                  {/* Status Filter */}
+                  <div>
+                    <select
+                      value={statusAuditFilter}
+                      onChange={(e) => setStatusAuditFilter(e.target.value)}
+                      className="w-full bg-slate-950/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-rose-500/60 cursor-pointer"
+                    >
+                      <option value="all">All Inquiry Statuses</option>
+                      <option value="RESOLVED">Resolved Only</option>
+                      <option value="APPROVED">Approved Only</option>
+                      <option value="PENDING">Pending Only</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Audit Content View */}
+                {loadingFacultyAudit ? (
+                  <div className="py-14 text-center text-xs text-slate-400 space-y-2">
+                    <div className="w-7 h-7 border-2 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                    <p>Loading student faculty response audit trail...</p>
+                  </div>
+                ) : auditViewMode === 'students' ? (
+                  /* VIEW 1: GROUPED BY STUDENT */
+                  facultyAuditData.students && facultyAuditData.students.length > 0 ? (
+                    <div className="space-y-4">
+                      {facultyAuditData.students.map((student) => {
+                        const isExpanded = expandedStudentKey === student.studentKey;
+                        return (
+                          <div
+                            key={student.studentKey}
+                            className="glass-panel rounded-2xl border border-white/[0.08] overflow-hidden transition-all duration-200"
+                          >
+                            {/* Student Summary Card Header */}
+                            <div
+                              onClick={() => setExpandedStudentKey(isExpanded ? null : student.studentKey)}
+                              className="p-4 sm:p-5 flex items-center justify-between gap-4 cursor-pointer hover:bg-white/[0.02] transition-colors flex-wrap"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 flex items-center justify-center font-bold font-mono text-sm shrink-0">
+                                  {student.studentName.slice(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-bold text-sm text-white">{student.studentName}</h4>
+                                    <span className="font-mono text-[10px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                                      {student.admissionNo}
+                                    </span>
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 mt-0.5">
+                                    <span>{student.studentDepartment}</span> • <span className="font-mono text-slate-300">{student.studentEmail}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 text-xs">
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-white/10">
+                                    {student.totalInquiries} {student.totalInquiries === 1 ? 'Inquiry' : 'Inquiries'}
+                                  </span>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">
+                                    {student.resolvedCount} Resolved
+                                  </span>
+                                </div>
+                                {isExpanded ? (
+                                  <ChevronUp className="w-4 h-4 text-slate-400" />
+                                ) : (
+                                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Expanded Student History */}
+                            {isExpanded && (
+                              <div className="p-4 sm:p-5 border-t border-white/[0.07] bg-slate-950/60 space-y-4">
+                                <div className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                                  <FileText className="w-3.5 h-3.5 text-rose-400" />
+                                  <span>Faculty Advisory History for {student.studentName}</span>
+                                </div>
+
+                                {student.requests.map((req) => (
+                                  <div
+                                    key={req.id}
+                                    className="p-4 rounded-xl bg-slate-900/90 border border-white/[0.08] space-y-3"
+                                  >
+                                    {/* Inquiry Topic & Mentor Header */}
+                                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                                      <div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-bold text-slate-200">
+                                            Mentor: {req.mentor?.name || req.mentorName}
+                                          </span>
+                                          <span className="text-[10px] text-slate-400 font-mono">
+                                            ({req.mentor?.department || 'Faculty Mentor'})
+                                          </span>
+                                        </div>
+                                        <span className="text-[10px] text-slate-400 font-mono">
+                                          Submitted: {new Date(req.createdAt).toLocaleString()}
+                                        </span>
+                                      </div>
+
+                                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                                        req.status === 'RESOLVED'
+                                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                          : req.status === 'APPROVED'
+                                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                          : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                      }`}>
+                                        {req.status}
+                                      </span>
+                                    </div>
+
+                                    {/* Student's Reason */}
+                                    <div className="p-3 rounded-lg bg-slate-950 border border-white/5 text-xs text-slate-300 space-y-1">
+                                      <span className="text-[10px] font-mono text-slate-500 uppercase block">
+                                        Student Inquiry:
+                                      </span>
+                                      <p className="whitespace-pre-line text-slate-300">{req.reason}</p>
+                                    </div>
+
+                                    {/* Faculty's Response */}
+                                    {req.replyMessage ? (
+                                      <div className="p-3.5 rounded-lg bg-emerald-950/20 border border-emerald-500/30 text-xs text-emerald-200 space-y-1.5">
+                                        <div className="flex items-center justify-between text-[10px] text-emerald-400 font-bold uppercase tracking-wider">
+                                          <span>Faculty Advisory Answer</span>
+                                          <span className="font-mono text-slate-400 lowercase">
+                                            {new Date(req.updatedAt).toLocaleString()}
+                                          </span>
+                                        </div>
+                                        <p className="whitespace-pre-line text-emerald-100">{req.replyMessage}</p>
+                                      </div>
+                                    ) : (
+                                      <div className="p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300 font-mono text-center">
+                                        Awaiting response from {req.mentorName}
+                                      </div>
+                                    )}
+
+                                    {/* Audit Trail Verification Badge */}
+                                    {req.relatedAuditLogs && req.relatedAuditLogs.length > 0 && (
+                                      <div className="p-2.5 rounded-lg bg-slate-950/90 border border-white/5 text-[10px] font-mono text-slate-400 space-y-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-slate-300 font-bold flex items-center gap-1">
+                                            <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                                            <span>Immutable Audit Verification</span>
+                                          </span>
+                                          <span>Log ID: {req.relatedAuditLogs[0].id.slice(0, 13)}...</span>
+                                        </div>
+                                        <div>
+                                          Actor: <span className="text-slate-200">{req.relatedAuditLogs[0].userEmail || 'Faculty'}</span> •
+                                          IP: <span className="text-slate-200">{req.relatedAuditLogs[0].ipAddress || '127.0.0.1'}</span> •
+                                          Action: <span className="text-emerald-400">{req.relatedAuditLogs[0].action}</span>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  </div>
+                                ))}
+
+                              </div>
+                            )}
+
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center text-xs text-slate-400">
+                      No student mentorship inquiries or faculty responses found matching your criteria.
+                    </div>
+                  )
+                ) : (
+                  /* VIEW 2: CHRONOLOGICAL AUDIT EVENT TIMELINE */
+                  facultyAuditData.auditLogs && facultyAuditData.auditLogs.length > 0 ? (
+                    <div className="overflow-x-auto max-h-[500px] overflow-y-auto pr-1">
+                      <table className="w-full text-left text-xs">
+                        <thead className="sticky top-0 bg-slate-950/90 backdrop-blur-md">
+                          <tr className="border-b border-white/10 text-slate-400 font-mono text-[11px]">
+                            <th className="pb-3 font-medium">Timestamp</th>
+                            <th className="pb-3 font-medium">Action</th>
+                            <th className="pb-3 font-medium">Faculty / Actor</th>
+                            <th className="pb-3 font-medium">Target Student</th>
+                            <th className="pb-3 font-medium">Admission No</th>
+                            <th className="pb-3 font-medium">Status Transition</th>
+                            <th className="pb-3 font-medium text-right">Audit ID</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.06] font-mono text-[11px]">
+                          {facultyAuditData.auditLogs.map((log) => {
+                            const meta = log.metadataParsed || {};
+                            return (
+                              <tr key={log.id} className="hover:bg-white/[0.02]">
+                                <td className="py-3 text-slate-400 whitespace-nowrap">
+                                  {new Date(log.createdAt).toLocaleString()}
+                                </td>
+                                <td className="py-3">
+                                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    log.action === 'FACULTY_RESPONSE_RECORDED'
+                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  }`}>
+                                    {log.action}
+                                  </span>
+                                </td>
+                                <td className="py-3 text-slate-200">
+                                  {log.userEmail || meta.facultyEmail || 'Faculty'}
+                                </td>
+                                <td className="py-3 text-white font-sans font-medium">
+                                  {meta.studentName || '-'}
+                                </td>
+                                <td className="py-3 text-amber-300">
+                                  {meta.admissionNo || '-'}
+                                </td>
+                                <td className="py-3">
+                                  {meta.previousStatus && meta.newStatus ? (
+                                    <span className="text-slate-300">
+                                      {meta.previousStatus} → <strong className="text-emerald-400">{meta.newStatus}</strong>
+                                    </span>
+                                  ) : (
+                                    <span className="text-slate-400">{meta.newStatus || '-'}</span>
+                                  )}
+                                </td>
+                                <td className="py-3 text-right text-slate-500 text-[10px]">
+                                  {log.id.slice(0, 8)}...
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="py-12 text-center text-xs text-slate-400">
+                      No faculty response audit log events recorded yet.
+                    </div>
+                  )
+                )}
+
+              </div>
+
             </div>
           )}
 

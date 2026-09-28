@@ -142,8 +142,8 @@ export const SidebarContent = ({ onSelect }) => {
           </span>
         </button>
 
-        {/* Staff & Mentor Portal Button (Hidden for Students) */}
-        {!isStudent && (
+        {/* Staff & Mentor Portal Button (Only for Logged-In Faculty and Admins) */}
+        {(isFaculty || isAdmin) && (
           <button
             onClick={() => {
               setIsStaffPortalOpen(true);
