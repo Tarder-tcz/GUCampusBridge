@@ -18,20 +18,11 @@ export const PostDetail = ({ post }) => {
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-      
-      {/* Back Button */}
-      <button
-        onClick={() => setSelectedPost(null)}
-        className="self-start flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-900/80 hover:bg-slate-800 border border-white/10 hover:border-white/20 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer haptic-btn shadow-sm"
-      >
-        <ArrowLeft className="w-4 h-4 text-rose-400" />
-        <span>Back to Discussions</span>
-      </button>
 
       {/* Main Post Card */}
       <article className="glass-panel rounded-3xl p-6 sm:p-8 border border-white/[0.08] shadow-2xl relative overflow-hidden">
         <div className="absolute -right-16 -top-16 w-56 h-56 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
-        
+
         {/* Header Metadata */}
         <div className="flex items-center justify-between gap-3 mb-5 flex-wrap pb-4 border-b border-white/[0.07] relative z-10">
           <div className="flex items-center gap-3">
@@ -58,11 +49,10 @@ export const PostDetail = ({ post }) => {
             </span>
             <button
               onClick={() => toggleBookmark(post.id)}
-              className={`p-2 rounded-xl border transition-colors cursor-pointer haptic-btn ${
-                isSaved
+              className={`p-2 rounded-xl border transition-colors cursor-pointer haptic-btn ${isSaved
                   ? 'text-rose-400 bg-rose-500/10 border-rose-500/30'
                   : 'text-slate-400 border-white/[0.08] hover:text-white hover:bg-white/[0.06]'
-              }`}
+                }`}
             >
               <Bookmark className={`w-4 h-4 ${isSaved ? 'fill-rose-400' : ''}`} />
             </button>
