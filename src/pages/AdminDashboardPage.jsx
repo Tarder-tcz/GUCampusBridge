@@ -206,12 +206,17 @@ export const AdminDashboardPage = () => {
       return;
     }
 
+    setErrorMsg('');
+    // Optimistically update the user list so the select doesn't snap back while loading
+    setUsers(prev => prev.map(u => (u.id === userId ? { ...u, role: newRole } : u)));
+
     try {
       await api.updateUserRole(userId, newRole, `Superadmin reassignment by ${user?.email}`);
-      fetchUsers();
-      setSuccessMsg(`Updated ${targetUserEmail} to ${newRole} role`);
+      await fetchUsers();
+      setSuccessMsg(`Successfully updated ${targetUserEmail} to ${newRole} role`);
     } catch (err) {
       setErrorMsg(err.message || 'Failed to update user role');
+      fetchUsers();
     }
   };
 

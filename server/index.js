@@ -612,8 +612,9 @@ app.post('/api/admin/invites', authenticateToken, requireRole('ADMIN'), async (r
       return res.status(400).json({ error: 'A valid institutional email address is required' });
     }
 
-    if (!['FACULTY', 'ADMIN'].includes(role)) {
-      return res.status(400).json({ error: 'Privileged role must be either FACULTY or ADMIN' });
+    const normalizedRole = typeof role === 'string' ? role.trim().toUpperCase() : 'FACULTY';
+    if (!['VOLUNTEER', 'FACULTY', 'ADMIN'].includes(normalizedRole)) {
+      return res.status(400).json({ error: 'Privileged role must be VOLUNTEER, FACULTY, or ADMIN' });
     }
 
     // Check if user already exists
@@ -631,7 +632,7 @@ app.post('/api/admin/invites', authenticateToken, requireRole('ADMIN'), async (r
     const invitation = await prisma.pendingInvitation.upsert({
       where: { email },
       update: {
-        role,
+        role: normalizedRole,
         department,
         tokenHash,
         invitedBy: req.user.id,
@@ -642,7 +643,7 @@ app.post('/api/admin/invites', authenticateToken, requireRole('ADMIN'), async (r
       },
       create: {
         email,
-        role,
+        role: normalizedRole,
         department,
         tokenHash,
         invitedBy: req.user.id,
@@ -655,14 +656,14 @@ app.post('/api/admin/invites', authenticateToken, requireRole('ADMIN'), async (r
       userId: req.user.id,
       userEmail: req.user.email,
       userRole: req.user.role,
-      action: `INVITE_${role}_GENERATED`,
+      action: `INVITE_${normalizedRole}_GENERATED`,
       resource: `invitation:${invitation.id}`,
-      metadata: { targetEmail: email, role, department },
+      metadata: { targetEmail: email, role: normalizedRole, department },
       req
     });
 
     res.status(201).json({
-      message: `Privileged invitation generated for ${email} (${role})`,
+      message: `Privileged invitation generated for ${email} (${normalizedRole})`,
       invitation: {
         id: invitation.id,
         email: invitation.email,
@@ -777,8 +778,8 @@ app.post('/api/invites/claim', async (req, res) => {
           name,
           password: hashedPassword,
           role: invitation.role,
-          badge: invitation.role === 'ADMIN' ? 'Super Admin' : 'Faculty Member',
-          headline: invitation.role === 'ADMIN' ? 'System Administrator' : `Faculty • ${invitation.department || 'Galgotias'}`,
+          badge: invitation.role === 'ADMIN' ? 'Super Admin' : invitation.role === 'VOLUNTEER' ? 'Campus Volunteer' : 'Faculty Member',
+          headline: invitation.role === 'ADMIN' ? 'System Administrator' : invitation.role === 'VOLUNTEER' ? 'Campus Volunteer & Noticeboard Lead' : `Faculty • ${invitation.department || 'Galgotias'}`,
           department: invitation.department || user.department,
           avatar: avatar || user.avatar,
           bio: bio || user.bio
@@ -794,11 +795,11 @@ app.post('/api/invites/claim', async (req, res) => {
           handle: userHandle,
           avatar: avatar || DEFAULT_AVATAR,
           role: invitation.role,
-          badge: invitation.role === 'ADMIN' ? 'Super Admin' : 'Faculty Member',
-          headline: invitation.role === 'ADMIN' ? 'System Administrator' : `Faculty • ${invitation.department || 'Galgotias'}`,
+          badge: invitation.role === 'ADMIN' ? 'Super Admin' : invitation.role === 'VOLUNTEER' ? 'Campus Volunteer' : 'Faculty Member',
+          headline: invitation.role === 'ADMIN' ? 'System Administrator' : invitation.role === 'VOLUNTEER' ? 'Campus Volunteer & Noticeboard Lead' : `Faculty • ${invitation.department || 'Galgotias'}`,
           department: invitation.department || 'School of Computer Science & Engineering',
-          bio: bio || `Galgotias University ${invitation.role === 'ADMIN' ? 'Administrator' : 'Faculty Member'}`,
-          karma: invitation.role === 'ADMIN' ? 5000 : 1500
+          bio: bio || `Galgotias University ${invitation.role === 'ADMIN' ? 'Administrator' : invitation.role === 'VOLUNTEER' ? 'Campus Volunteer' : 'Faculty Member'}`,
+          karma: invitation.role === 'ADMIN' ? 5000 : invitation.role === 'VOLUNTEER' ? 500 : 1500
         }
       });
     }
@@ -880,19 +881,38 @@ app.put('/api/admin/users/:id/role', authenticateToken, requireRole('ADMIN'), as
     const { id } = req.params;
     const { newRole, reason = 'Administrative role reassignment' } = req.body;
 
-    if (!['STUDENT', 'FACULTY', 'ADMIN'].includes(newRole)) {
-      return res.status(400).json({ error: 'Invalid target role. Must be STUDENT, FACULTY, or ADMIN.' });
+    const normalizedRole = typeof newRole === 'string' ? newRole.trim().toUpperCase() : '';
+    const VALID_ROLES = ['STUDENT', 'VOLUNTEER', 'FACULTY', 'ADMIN'];
+
+    if (!VALID_ROLES.includes(normalizedRole)) {
+      return res.status(400).json({ error: `Invalid target role. Must be ${VALID_ROLES.join(', ')}.` });
     }
 
     const targetUser = await prisma.user.findUnique({ where: { id } });
     if (!targetUser) return res.status(404).json({ error: 'Target user not found' });
 
+    // Safeguard: Prevent admin from demoting their own account to prevent accidental lockout
+    if (req.user.id === id && normalizedRole !== 'ADMIN') {
+      return res.status(400).json({ error: 'Cannot demote your own Super Admin account to prevent lockout. Another admin must perform this action.' });
+    }
+
     const previousRole = targetUser.role;
+    const getBadgeForRole = (role) => {
+      switch (role) {
+        case 'ADMIN': return 'Super Admin';
+        case 'FACULTY': return 'Faculty Member';
+        case 'VOLUNTEER': return 'Campus Volunteer';
+        case 'STUDENT':
+        default:
+          return 'Student';
+      }
+    };
+
     const updated = await prisma.user.update({
       where: { id },
       data: {
-        role: newRole,
-        badge: newRole === 'ADMIN' ? 'Super Admin' : newRole === 'FACULTY' ? 'Faculty Member' : 'Student'
+        role: normalizedRole,
+        badge: getBadgeForRole(normalizedRole)
       }
     });
 
@@ -902,12 +922,12 @@ app.put('/api/admin/users/:id/role', authenticateToken, requireRole('ADMIN'), as
       userRole: req.user.role,
       action: 'ADMIN_ROLE_MODIFIED',
       resource: `user:${id}`,
-      metadata: { targetEmail: targetUser.email, previousRole, newRole, reason },
+      metadata: { targetEmail: targetUser.email, previousRole, newRole: normalizedRole, reason },
       req
     });
 
     res.json({
-      message: `User role updated from ${previousRole} to ${newRole}`,
+      message: `User role updated from ${previousRole} to ${normalizedRole}`,
       user: formatUser(updated)
     });
   } catch (err) {

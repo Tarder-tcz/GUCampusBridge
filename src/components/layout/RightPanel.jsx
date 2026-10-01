@@ -63,9 +63,7 @@ export const RightPanelContent = ({ onSelect }) => {
                   {post.title}
                 </h4>
                 <div className="flex items-center gap-3 text-[10px] text-slate-400 mt-1.5 font-mono">
-                  <span className="flex items-center gap-1 text-slate-300">
-                    <ThumbsUp className="w-2.5 h-2.5 text-rose-400" /> {post.votes}
-                  </span>
+
                   <span className="flex items-center gap-1 text-slate-300">
                     <MessageSquare className="w-2.5 h-2.5 text-slate-400" /> {post.commentCount}
                   </span>
