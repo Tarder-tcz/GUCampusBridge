@@ -51,14 +51,14 @@ const ForumMainContent = () => {
       {/* Navigation Header */}
       <Header />
 
-      {/* Main App Layout Grid */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-5 lg:gap-6">
+      {/* Main App Layout */}
+      <div className="flex-1 flex w-full min-h-0">
 
         {/* Left Sidebar Navigation */}
         <Sidebar />
 
         {/* Center Content Section */}
-        <section className="flex-1 min-w-0 flex flex-col gap-5">
+        <main className="flex-1 min-w-0 px-3 sm:px-5 lg:px-7 py-5 flex flex-col gap-5 max-w-4xl xl:max-w-5xl mx-auto">
 
           {selectedPost ? (
             /* Selected Post Detail View */
@@ -80,18 +80,7 @@ const ForumMainContent = () => {
                       {posts.length} {posts.length === 1 ? 'Discussion' : 'Discussions'}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm text-slate-300/80 mt-1.5 leading-relaxed">
-                    Galgotias University verified course discussions, CAT question banks, faculty notes, and student advisory threads.
-                  </p>
                 </div>
-
-                <button
-                  onClick={handleStartDiscussion}
-                  className="relative z-10 bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-semibold px-4 py-2.5 rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-rose-950/40 border border-rose-400/30 transition-all cursor-pointer haptic-btn"
-                >
-                  <MessageSquarePlus className="w-4 h-4 stroke-[2.5]" />
-                  <span>Start Discussion</span>
-                </button>
               </div>
 
               {/* Active Filter Chips */}
@@ -157,12 +146,12 @@ const ForumMainContent = () => {
             </>
           )}
 
-        </section>
+        </main>
 
         {/* Right Sidebar Widgets */}
         <RightPanel />
 
-      </main>
+      </div>
 
     </div>
   );

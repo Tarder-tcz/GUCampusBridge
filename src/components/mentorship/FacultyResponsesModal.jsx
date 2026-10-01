@@ -138,7 +138,7 @@ export const FacultyResponsesModal = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
-      
+
       {/* Dark backdrop overlay with blur */}
       <div
         className="fixed inset-0 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200"
@@ -147,7 +147,7 @@ export const FacultyResponsesModal = () => {
 
       {/* Main Dialogue Box Card */}
       <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col glass-panel rounded-3xl border border-white/10 shadow-2xl overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Ambient glow accent */}
         <div className="absolute -top-24 -right-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -164,20 +164,16 @@ export const FacultyResponsesModal = () => {
                   {isAdmin
                     ? 'Faculty Responses (Admin Directory)'
                     : isFaculty
-                    ? 'My Authored Faculty Responses'
-                    : 'My Faculty Advisories & Responses'}
+                      ? 'My Authored Faculty Responses'
+                      : 'My Faculty Advisories & Responses'}
                 </h2>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
-                  <span>Account Specific</span>
-                </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
                 {isAdmin
                   ? 'Administrative oversight of student inquiries and faculty responses across campus.'
                   : isFaculty
-                  ? `Private responses authored by you (${userState?.name}) to student 1-on-1 mentorship requests.`
-                  : `Private & confidential guidance from Galgotias University faculty mentors for ${userState?.name || 'your account'}.`}
+                    ? `Private responses authored by you (${userState?.name}) to student 1-on-1 mentorship requests.`
+                    : `Private & confidential guidance from Galgotias University faculty mentors for ${userState?.name || 'your account'}.`}
               </p>
             </div>
           </div>
@@ -228,41 +224,37 @@ export const FacultyResponsesModal = () => {
           <>
             {/* 2. Control Toolbar: Tabs, Search & Filters */}
             <div className="p-4 sm:p-5 border-b border-white/[0.06] bg-slate-950/40 space-y-3.5 relative z-10">
-              
+
               {/* Top Row: Tabs & Sort Order Toggle */}
               <div className="flex items-center justify-between gap-3 flex-wrap">
-                
+
                 {/* Tabs: My Responses vs Bookmarked */}
                 <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 rounded-2xl border border-white/10 shadow-inner flex-wrap">
                   <button
                     onClick={() => setActiveTab('ALL')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                      activeTab === 'ALL'
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'ALL'
                         ? 'bg-amber-500 text-slate-950 shadow-md font-bold'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
-                    }`}
+                      }`}
                   >
                     <span>{isFaculty ? 'All My Authored Responses' : 'All My Advisories'}</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                      activeTab === 'ALL' ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-300'
-                    }`}>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${activeTab === 'ALL' ? 'bg-slate-950/20 text-slate-950' : 'bg-slate-800 text-slate-300'
+                      }`}>
                       {responses.length}
                     </span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('BOOKMARKED')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${
-                      activeTab === 'BOOKMARKED'
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer ${activeTab === 'BOOKMARKED'
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-md font-bold'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
-                    }`}
+                      }`}
                   >
                     <Bookmark className={`w-3.5 h-3.5 ${activeTab === 'BOOKMARKED' ? 'fill-current text-slate-950' : 'text-amber-400'}`} />
                     <span>Bookmarked</span>
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
-                      activeTab === 'BOOKMARKED' ? 'bg-slate-950/20 text-slate-950' : 'bg-amber-500/20 text-amber-300'
-                    }`}>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${activeTab === 'BOOKMARKED' ? 'bg-slate-950/20 text-slate-950' : 'bg-amber-500/20 text-amber-300'
+                      }`}>
                       {bookmarkedCount}
                     </span>
                   </button>
@@ -284,7 +276,7 @@ export const FacultyResponsesModal = () => {
 
               {/* Bottom Row: Search Box & Department Filter */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                
+
                 {/* Search Box */}
                 <div className="sm:col-span-2 relative">
                   <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -319,7 +311,7 @@ export const FacultyResponsesModal = () => {
 
             {/* 3. Modal Content: Responses Stream */}
             <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4 relative z-10">
-              
+
               {loading ? (
                 <div className="py-16 text-center space-y-3">
                   <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -341,8 +333,8 @@ export const FacultyResponsesModal = () => {
                     {activeTab === 'BOOKMARKED'
                       ? 'Click the bookmark icon on any faculty advice card to tag and save it in this tab for quick revision.'
                       : isFaculty
-                      ? 'You have not responded to any student mentorship requests yet. Use the Staff Portal to review incoming requests.'
-                      : 'You do not have any faculty responses matching this filter. Once a faculty mentor replies to your 1-on-1 query, it will appear here.'}
+                        ? 'You have not responded to any student mentorship requests yet. Use the Staff Portal to review incoming requests.'
+                        : 'You do not have any faculty responses matching this filter. Once a faculty mentor replies to your 1-on-1 query, it will appear here.'}
                   </p>
                   {!isFaculty && (
                     <button
@@ -363,12 +355,12 @@ export const FacultyResponsesModal = () => {
                     const isCopied = copiedId === item.id;
                     const formattedDate = item.createdAt
                       ? new Date(item.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
                       : 'Recent Advisory';
 
                     return (
@@ -376,10 +368,10 @@ export const FacultyResponsesModal = () => {
                         key={item.id}
                         className="glass-panel rounded-2xl p-4 sm:p-5 border border-white/[0.08] hover:border-amber-500/30 transition-all duration-200 shadow-xl relative overflow-hidden group space-y-4"
                       >
-                        
+
                         {/* Top Row: Faculty Profile Info + Confidential Student Tag */}
                         <div className="flex items-start justify-between gap-3 flex-wrap">
-                          
+
                           {/* Faculty Info */}
                           <div className="flex items-center gap-3">
                             <img
@@ -414,11 +406,10 @@ export const FacultyResponsesModal = () => {
                             </span>
                             <button
                               onClick={() => toggleFacultyBookmark(item.id)}
-                              className={`p-2 rounded-xl transition-all cursor-pointer ${
-                                isBookmarked
+                              className={`p-2 rounded-xl transition-all cursor-pointer ${isBookmarked
                                   ? 'bg-amber-500 text-slate-950 shadow-md'
                                   : 'text-slate-400 hover:text-amber-300 hover:bg-white/[0.05] border border-white/5'
-                              }`}
+                                }`}
                               title={isBookmarked ? 'Remove Bookmark' : 'Bookmark this advisory'}
                             >
                               <Bookmark className="w-3.5 h-3.5 fill-current" />

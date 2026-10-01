@@ -122,7 +122,7 @@ export const CreatePostModal = () => {
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-slate-500 cursor-pointer"
             >
               {channels.filter(c => c.id !== 'all').map(ch => (
-                <option key={ch.id} value={ch.id} className="bg-slate-900">
+                <option key={ch.id} value={ch.id}>
                   {ch.label || ch.name}
                 </option>
               ))}

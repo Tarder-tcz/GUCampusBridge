@@ -41,21 +41,18 @@ export const SidebarContent = ({ onSelect }) => {
     setActiveChannel,
     selectedTag,
     setSelectedTag,
-    setIsMentorModalOpen,
-    setIsStaffPortalOpen,
     setIsFacultyResponsesOpen,
+    setIsStaffPortalOpen,
     isAdmin,
     isFaculty,
     userState
   } = useForum();
 
-  const isStudent = userState && (userState.role === 'STUDENT' || userState.role === 'VOLUNTEER');
-
   return (
-    <div className="glass-panel rounded-2xl overflow-hidden border border-white/[0.08] shadow-2xl divide-y divide-white/[0.06]">
+    <div className="flex flex-col divide-y divide-white/[0.06] text-slate-100 pb-8">
 
-      {/* 0. 1-on-1 Mentor Connect, Staff Portal & Admin Entry */}
-      <div className="p-3 bg-slate-950/40 space-y-2.5">
+      {/* 0. Quick Navigation & Portals */}
+      <div className="p-3 space-y-1.5">
         {/* Superadmin Exclusive Control Center */}
         {isAdmin && (
           <button
@@ -63,27 +60,25 @@ export const SidebarContent = ({ onSelect }) => {
               navigate('/admin');
               if (onSelect) onSelect();
             }}
-            className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${isAdminActive
-                ? 'bg-gradient-to-br from-purple-950/80 via-slate-900 to-rose-950/60 border-purple-500/70 shadow-lg shadow-purple-950/40 ring-1 ring-purple-500/50'
-                : 'bg-gradient-to-br from-slate-900 via-purple-950/30 to-slate-900 hover:to-purple-950/50 border-purple-500/40 hover:border-purple-400/60 shadow-md shadow-purple-950/20'
+            className={`w-full relative overflow-hidden text-slate-100 p-2.5 rounded-lg text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${isAdminActive
+                ? 'bg-purple-950/60 border-purple-500/60 text-purple-200 shadow-sm'
+                : 'bg-slate-900/40 hover:bg-purple-950/30 border-purple-500/25 hover:border-purple-400/50 text-slate-300'
               }`}
           >
-            <div className="flex items-center gap-2.5">
-              <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${isAdminActive
-                  ? 'bg-purple-600 text-white border-purple-400 shadow-sm shadow-purple-500/50'
-                  : 'bg-purple-500/20 border-purple-500/40 text-purple-300'
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className={`w-7 h-7 rounded-md border flex items-center justify-center shrink-0 ${isAdminActive
+                  ? 'bg-purple-600 text-white border-purple-400'
+                  : 'bg-purple-500/20 border-purple-500/30 text-purple-300'
                 }`}>
                 <ShieldAlert className="w-4 h-4" />
               </div>
-              <div className="text-left leading-tight">
-                <div className="font-bold text-white group-hover:text-purple-200 transition-colors flex items-center gap-1.5">
-                  <span>Admin Control Center</span>
-                </div>
-                <div className="text-[10px] text-purple-300/80 font-mono mt-0.5">RBAC & Faculty Invites</div>
+              <div className="text-left leading-tight truncate">
+                <div className="font-semibold text-xs text-white group-hover:text-purple-200 transition-colors">Admin Center</div>
+                <div className="text-[10px] text-purple-300/80 font-mono">RBAC & Invites</div>
               </div>
             </div>
-            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 uppercase tracking-wide">
-              ADMIN
+            <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 uppercase shrink-0">
+              MOD
             </span>
           </button>
         )}
@@ -94,47 +89,44 @@ export const SidebarContent = ({ onSelect }) => {
             navigate('/mentor-connect');
             if (onSelect) onSelect();
           }}
-          className={`w-full relative overflow-hidden text-slate-100 p-3 rounded-xl text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${isMentorConnectActive
-              ? 'bg-gradient-to-br from-rose-950/70 via-slate-900 to-rose-900/40 border-rose-500/70 shadow-lg shadow-rose-950/40 ring-1 ring-rose-500/40'
-              : 'bg-gradient-to-br from-slate-900 via-slate-900/90 to-rose-950/40 hover:to-rose-900/50 border-rose-500/30 hover:border-rose-500/50 shadow-md shadow-rose-950/20'
+          className={`w-full relative overflow-hidden text-slate-100 p-2.5 rounded-lg text-xs flex items-center justify-between border transition-all cursor-pointer group haptic-btn ${isMentorConnectActive
+              ? 'bg-rose-950/60 border-rose-500/60 text-white shadow-sm'
+              : 'bg-slate-900/40 hover:bg-rose-950/30 border-rose-500/20 hover:border-rose-500/40 text-slate-300'
             }`}
         >
-          <div className="flex items-center gap-2.5">
-            <div className={`w-7 h-7 rounded-lg border flex items-center justify-center group-hover:scale-110 transition-transform ${isMentorConnectActive
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className={`w-7 h-7 rounded-md border flex items-center justify-center shrink-0 ${isMentorConnectActive
                 ? 'bg-rose-500 text-white border-rose-400'
                 : 'bg-rose-500/20 border-rose-500/30 text-rose-400'
               }`}>
               <UserCheck className="w-4 h-4" />
             </div>
-            <div className="text-left leading-tight">
-              <div className="font-bold text-white group-hover:text-rose-200 transition-colors">1-on-1 Mentor Connect</div>
-              <div className="text-[10px] text-slate-400 font-medium mt-0.5">Private Faculty & Senior Advisory</div>
+            <div className="text-left leading-tight truncate">
+              <div className="font-semibold text-xs text-white group-hover:text-rose-200 transition-colors">Mentor Connect</div>
+              <div className="text-[10px] text-slate-400">Faculty Advisory</div>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-rose-300 group-hover:translate-x-0.5 transition-all" />
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-rose-300 group-hover:translate-x-0.5 transition-all shrink-0" />
         </button>
 
-        {/* Faculty Responses & Advice Dialogue Trigger (Visible to students & all campus members) */}
+        {/* Faculty Responses & Advice Dialogue Trigger */}
         <button
           onClick={() => {
             setIsFacultyResponsesOpen(true);
             if (onSelect) onSelect();
           }}
-          className="w-full relative overflow-hidden text-slate-100 p-2.5 rounded-xl text-xs flex items-center justify-between border bg-gradient-to-br from-slate-900 via-amber-950/20 to-slate-900 hover:to-amber-950/40 border-amber-500/30 hover:border-amber-500/60 shadow-md shadow-amber-950/20 transition-all cursor-pointer group haptic-btn"
+          className="w-full relative overflow-hidden text-slate-100 p-2 rounded-lg text-xs flex items-center justify-between border bg-slate-900/40 hover:bg-amber-950/30 border-amber-500/20 hover:border-amber-500/50 transition-all cursor-pointer group haptic-btn"
         >
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg border bg-amber-500/20 border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <MessageSquareQuote className="w-4 h-4" />
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-6 h-6 rounded-md border bg-amber-500/20 border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
+              <MessageSquareQuote className="w-3.5 h-3.5" />
             </div>
-            <div className="text-left leading-tight">
-              <div className="font-bold text-white group-hover:text-amber-200 transition-colors flex items-center gap-1.5">
-                <span>Faculty Responses</span>
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium mt-0.5">Answers & Advice to Students</div>
+            <div className="text-left leading-tight truncate">
+              <span className="font-semibold text-xs text-slate-200 group-hover:text-amber-200 transition-colors">Faculty Answers</span>
             </div>
           </div>
-          <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
-            Student Advice
+          <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono shrink-0">
+            Advice
           </span>
         </button>
 
@@ -145,34 +137,34 @@ export const SidebarContent = ({ onSelect }) => {
               setIsStaffPortalOpen(true);
               if (onSelect) onSelect();
             }}
-            className="w-full bg-slate-950/70 hover:bg-slate-900/80 text-slate-300 hover:text-slate-100 font-medium p-2.5 rounded-xl text-xs flex items-center justify-between border border-white/[0.07] hover:border-amber-500/30 transition-all cursor-pointer haptic-btn"
+            className="w-full bg-slate-900/30 hover:bg-slate-900/60 text-slate-300 hover:text-white font-medium p-2 rounded-lg text-xs flex items-center justify-between border border-white/[0.06] hover:border-amber-500/30 transition-all cursor-pointer haptic-btn"
           >
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>Staff / Faculty Portal</span>
+              <span>Staff Portal</span>
             </div>
-            <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md font-mono">
-              Staff Only
+            <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded font-mono">
+              Staff
             </span>
           </button>
         )}
       </div>
 
-      {/* 1. GU Channels Section */}
-      <div className="flex flex-col py-2">
-        {/* Header */}
-        <div className="flex items-center justify-between px-3.5 py-2">
-          <div className="flex items-center gap-2 text-slate-300 font-bold text-[11px] uppercase tracking-wider">
+      {/* 1. GU Channels Section (Traditional Reddit Communities List) */}
+      <div className="py-2.5">
+        {/* Section Header */}
+        <div className="flex items-center justify-between px-3.5 py-1.5 text-slate-400">
+          <div className="flex items-center gap-2 font-bold text-[10px] uppercase tracking-wider text-slate-400">
             <Compass className="w-3.5 h-3.5 text-rose-400" />
-            <span>GU Channels</span>
+            <span>Communities</span>
           </div>
-          <span className="text-[10px] text-slate-400 font-mono">
+          <span className="text-[10px] font-mono text-slate-400">
             {channels.length}
           </span>
         </div>
 
         {/* Channel Items */}
-        <nav className="flex flex-col gap-0.5 px-2">
+        <nav className="flex flex-col gap-0.5 px-2 mt-1">
           {channels.map((ch) => {
             const IconComponent = ICON_MAP[ch.icon] || Sparkles;
             const isActive = activeChannel === ch.id;
@@ -186,19 +178,19 @@ export const SidebarContent = ({ onSelect }) => {
                   if (location.pathname !== '/') navigate('/');
                   if (onSelect) onSelect();
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all text-left cursor-pointer group ${isActive
-                    ? 'bg-rose-500/15 text-white font-semibold border border-rose-500/30 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent'
+                className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all text-left cursor-pointer group ${isActive
+                    ? 'bg-rose-500/15 text-rose-200 font-semibold border-l-2 border-rose-500 pl-2'
+                    : 'text-slate-300 hover:text-white hover:bg-white/[0.05] border-l-2 border-transparent'
                   }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`p-1 rounded-lg transition-colors ${isActive ? 'bg-rose-500/20 text-rose-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                  <div className={`p-1 rounded-md transition-colors ${isActive ? 'bg-rose-500/25 text-rose-300' : 'text-slate-400 group-hover:text-slate-200'}`}>
                     <IconComponent className="w-3.5 h-3.5 shrink-0" />
                   </div>
                   <span className="truncate">{ch.label || ch.name}</span>
                 </div>
                 {isActive && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)]" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-rose-400 shadow-[0_0_8px_rgba(244,63,94,0.8)] shrink-0" />
                 )}
               </button>
             );
@@ -207,11 +199,11 @@ export const SidebarContent = ({ onSelect }) => {
       </div>
 
       {/* 2. Popular Tags Section */}
-      <div className="p-3.5 bg-slate-950/30">
-        <div className="flex items-center justify-between mb-2.5">
-          <div className="flex items-center gap-2 text-slate-300 font-bold text-[11px] uppercase tracking-wider">
-            <Tag className="w-3.5 h-3.5 text-slate-400" />
-            <span>Tags</span>
+      <div className="p-3.5">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1.5 text-slate-400 font-bold text-[10px] uppercase tracking-wider">
+            <Tag className="w-3 h-3 text-slate-400" />
+            <span>Topics & Tags</span>
           </div>
           {selectedTag && (
             <button
@@ -222,7 +214,7 @@ export const SidebarContent = ({ onSelect }) => {
               }}
               className="text-[10px] text-rose-400 hover:text-rose-300 hover:underline cursor-pointer font-medium"
             >
-              Reset tag
+              Reset
             </button>
           )}
         </div>
@@ -239,9 +231,9 @@ export const SidebarContent = ({ onSelect }) => {
                   if (location.pathname !== '/') navigate('/');
                   if (onSelect) onSelect();
                 }}
-                className={`px-2 py-1 rounded-lg text-[10px] font-mono transition-all cursor-pointer ${isSelected
-                    ? 'bg-rose-600 text-white font-bold shadow-md shadow-rose-950/50 border border-rose-400/40'
-                    : 'bg-slate-900/90 text-slate-400 border border-white/[0.07] hover:border-white/20 hover:text-slate-200 hover:bg-slate-800/60'
+                className={`px-2 py-0.5 rounded-md text-[10px] font-mono transition-all cursor-pointer ${isSelected
+                    ? 'bg-rose-600 text-white font-bold shadow-sm shadow-rose-950/50 border border-rose-400/40'
+                    : 'bg-slate-900/70 text-slate-400 border border-white/[0.06] hover:border-white/20 hover:text-slate-200 hover:bg-slate-800/60'
                   }`}
               >
                 #{tag.name}
@@ -251,13 +243,29 @@ export const SidebarContent = ({ onSelect }) => {
         </div>
       </div>
 
+      {/* 3. Traditional Reddit Sidebar Footer */}
+      <div className="p-3.5 text-[10px] text-slate-400 space-y-2">
+        <div className="flex flex-wrap gap-x-2.5 gap-y-1">
+          <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-300 hover:underline">Guidelines</a>
+          <span>·</span>
+          <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-300 hover:underline">Academic Honor</a>
+          <span>·</span>
+          <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-300 hover:underline">ERP</a>
+          <span>·</span>
+          <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-300 hover:underline">LMS</a>
+        </div>
+        <p className="font-mono text-[9px] text-slate-400">
+          Galgotias University CampusBridge © 2026
+        </p>
+      </div>
+
     </div>
   );
 };
 
 export const Sidebar = () => {
   return (
-    <aside className="hidden md:block w-60 lg:w-64 shrink-0 self-start sticky top-20">
+    <aside className="hidden md:flex flex-col w-60 lg:w-64 xl:w-72 shrink-0 border-r border-white/[0.08] bg-slate-950/75 backdrop-blur-xl sticky top-[var(--header-height,108px)] h-[calc(100dvh-var(--header-height,108px))] hover-scrollbar select-none z-20">
       <SidebarContent />
     </aside>
   );

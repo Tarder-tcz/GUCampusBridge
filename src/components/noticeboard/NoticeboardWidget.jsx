@@ -108,12 +108,12 @@ export const NoticeboardWidget = () => {
   };
 
   return (
-    <div className="glass-panel rounded-2xl border border-white/[0.08] shadow-2xl overflow-hidden flex flex-col min-h-[580px] divide-y divide-white/[0.06]">
+    <div className="flex flex-col divide-y divide-white/[0.06]">
       
       {/* 1. WIDGET HEADER */}
-      <div className="p-3.5 bg-slate-950/60 flex items-center justify-between gap-2.5">
+      <div className="p-3 bg-slate-950/60 flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500/20 to-rose-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-sm">
+          <div className="w-6 h-6 rounded-md bg-amber-500/20 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0">
             <Megaphone className="w-3.5 h-3.5" />
           </div>
           <div>
@@ -122,7 +122,7 @@ export const NoticeboardWidget = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             </h4>
             <div className="text-[10px] text-slate-400 font-mono">
-              Faculty & Volunteer Notices
+              Faculty & Volunteer
             </div>
           </div>
         </div>
@@ -131,7 +131,7 @@ export const NoticeboardWidget = () => {
           {canManageNotices && (
             <button
               onClick={handleCreateNotice}
-              className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-[10px] flex items-center gap-1 shadow-sm transition-all cursor-pointer haptic-btn"
+              className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-2 py-0.5 rounded-md text-[10px] flex items-center gap-1 transition-all cursor-pointer haptic-btn"
               title="Publish New Notice or Event"
             >
               <Plus className="w-3 h-3 stroke-[3]" />
@@ -141,7 +141,7 @@ export const NoticeboardWidget = () => {
 
           <button
             onClick={handleOpenAllNotices}
-            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            className="p-1 rounded-md text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
             title="Open Noticeboard Dialogue Box"
           >
             <ExternalLink className="w-3.5 h-3.5" />
@@ -152,25 +152,25 @@ export const NoticeboardWidget = () => {
       {/* ========================================================================= */}
       {/* SECTION 1 (TOP SECTION): PINNED NOTICES */}
       {/* ========================================================================= */}
-      <div className="p-3.5 bg-gradient-to-b from-amber-950/15 via-transparent to-transparent space-y-2.5">
+      <div className="p-3 bg-gradient-to-b from-amber-950/10 via-transparent to-transparent space-y-2">
         
         {/* Pinned Section Header */}
-        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-amber-300/90 font-mono">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-amber-300/90 font-mono">
           <span className="flex items-center gap-1.5">
-            <Pin className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
-            <span>Pinned Announcements</span>
+            <Pin className="w-3 h-3 text-amber-400 fill-amber-400/20" />
+            <span>Pinned</span>
           </span>
-          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
             {pinnedNotices.length}
           </span>
         </div>
 
         {/* Pinned Notices List */}
         {loadingNotices ? (
-          <div className="py-6 text-center text-xs text-slate-400">Loading notices...</div>
+          <div className="py-4 text-center text-xs text-slate-400">Loading notices...</div>
         ) : pinnedNotices.length > 0 ? (
-          <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
-            {pinnedNotices.map((notice) => {
+          <div className="space-y-1.5">
+            {pinnedNotices.slice(0, 3).map((notice) => {
               const catBadge = getCategoryBadge(notice.category);
               const pinLeft = formatTimeRemaining(notice.pinnedUntil);
 
@@ -178,7 +178,7 @@ export const NoticeboardWidget = () => {
                 <div
                   key={notice.id}
                   onClick={() => handleOpenNotice(notice)}
-                  className="p-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 border border-amber-500/30 hover:border-amber-400/60 transition-all cursor-pointer shadow-sm group relative overflow-hidden space-y-1.5"
+                  className="p-2 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-amber-500/25 hover:border-amber-400/50 transition-all cursor-pointer shadow-sm group space-y-1"
                 >
                   <div className="flex items-center justify-between gap-1.5 flex-wrap">
                     <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${catBadge.className}`}>
@@ -253,23 +253,23 @@ export const NoticeboardWidget = () => {
       {/* ========================================================================= */}
       {/* SECTION 2 (BOTTOM SECTION): LATEST NOTICES (TOP TO BOTTOM) */}
       {/* ========================================================================= */}
-      <div className="p-3.5 flex-1 flex flex-col justify-between space-y-2.5 bg-slate-950/30">
+      <div className="p-3 space-y-2">
         
         {/* Latest Section Header */}
-        <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-300 font-mono">
+        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400 font-mono">
           <span className="flex items-center gap-1.5">
-            <Clock className="w-3.5 h-3.5 text-blue-400" />
+            <Clock className="w-3 h-3 text-blue-400" />
             <span>Latest Notices</span>
           </span>
-          <span className="text-[10px] text-slate-400 font-mono">
+          <span className="text-[9px] text-slate-400 font-mono">
             {latestNotices.length} {latestNotices.length === 1 ? 'Notice' : 'Notices'}
           </span>
         </div>
 
-        {/* Latest Notices List (Top to Bottom) */}
+        {/* Latest Notices List */}
         {latestNotices.length > 0 ? (
-          <div className="space-y-2 max-h-[260px] overflow-y-auto pr-1 flex-1">
-            {latestNotices.map((notice) => {
+          <div className="space-y-1.5">
+            {latestNotices.slice(0, 4).map((notice) => {
               const catBadge = getCategoryBadge(notice.category);
               const timeLeft = formatTimeRemaining(notice.expiresAt);
 
@@ -277,7 +277,7 @@ export const NoticeboardWidget = () => {
                 <div
                   key={notice.id}
                   onClick={() => handleOpenNotice(notice)}
-                  className="p-2.5 rounded-xl bg-slate-950/50 hover:bg-slate-900 border border-white/[0.06] hover:border-white/15 transition-all cursor-pointer shadow-sm group space-y-1.5"
+                  className="p-2 rounded-lg bg-slate-900/50 hover:bg-slate-900 border border-white/[0.06] hover:border-white/15 transition-all cursor-pointer shadow-sm group space-y-1"
                 >
                   <div className="flex items-center justify-between gap-1.5">
                     <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${catBadge.className}`}>
@@ -328,14 +328,14 @@ export const NoticeboardWidget = () => {
             })}
           </div>
         ) : (
-          <div className="py-8 text-center text-xs text-slate-400 flex-1 flex flex-col items-center justify-center">
+          <div className="py-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center">
             <p>No notices published yet.</p>
             {canManageNotices && (
               <button
                 onClick={handleCreateNotice}
-                className="mt-2 text-xs font-semibold text-amber-400 hover:underline cursor-pointer"
+                className="mt-1 text-xs font-semibold text-amber-400 hover:underline cursor-pointer"
               >
-                + Publish the first notice
+                + Publish notice
               </button>
             )}
           </div>
@@ -344,7 +344,7 @@ export const NoticeboardWidget = () => {
         {/* View All In Dialogue Box Footer Trigger */}
         <button
           onClick={handleOpenAllNotices}
-          className="w-full mt-2 py-2 px-3 rounded-xl bg-slate-900/80 hover:bg-slate-850 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white text-xs font-semibold flex items-center justify-between transition-all cursor-pointer group"
+          className="w-full mt-1.5 py-1.5 px-2.5 rounded-lg bg-slate-900/60 hover:bg-slate-850 border border-white/10 hover:border-white/20 text-slate-300 hover:text-white text-xs font-medium flex items-center justify-between transition-all cursor-pointer group"
         >
           <span>View Noticeboard Archive</span>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:translate-x-0.5 transition-transform" />

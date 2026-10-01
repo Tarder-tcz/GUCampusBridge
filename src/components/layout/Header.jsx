@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { useForum } from '../../context/ForumContext';
 import { DEFAULT_AVATAR } from '../../data/mockData';
 import { SidebarContent } from './Sidebar';
+import { RightPanelContent } from './RightPanel';
 import {
   Search,
   Plus,
-  Bell,
   LayoutGrid,
   ListFilter,
   SlidersHorizontal,
@@ -19,7 +19,11 @@ import {
   MoreVertical,
   LogIn,
   UserPlus,
-  ShieldAlert
+  ShieldAlert,
+  Sun,
+  Moon,
+  Compass,
+  Flame
 } from 'lucide-react';
 
 export const Header = () => {
@@ -38,17 +42,39 @@ export const Header = () => {
     setSortBy,
     setIsAuthModalOpen,
     setAuthModalMode,
-    isAdmin
+    isAdmin,
+    theme,
+    toggleTheme
   } = useForum();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isGuestMenuOpen, setIsGuestMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState('sidebar'); // 'sidebar' | 'rightpanel'
 
   const profileMenuRef = useRef(null);
   const guestMenuRef = useRef(null);
+  const headerRef = useRef(null);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  useEffect(() => {
+    if (!headerRef.current) return;
+    const updateHeight = () => {
+      if (headerRef.current) {
+        const h = headerRef.current.offsetHeight;
+        document.documentElement.style.setProperty('--header-height', `${h}px`);
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    const ro = new ResizeObserver(updateHeight);
+    ro.observe(headerRef.current);
+    return () => {
+      window.removeEventListener('resize', updateHeight);
+      ro.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -77,8 +103,8 @@ export const Header = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full glass-panel border-b border-white/[0.08] px-3 sm:px-6 py-2.5 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto flex flex-col gap-2.5">
+      <header ref={headerRef} className="sticky top-0 z-40 w-full glass-panel border-b border-white/[0.08] px-3 sm:px-6 py-2.5 backdrop-blur-xl">
+        <div className="w-full flex flex-col gap-2.5">
 
           {/* Top Row Header */}
           <div className="flex items-center justify-between gap-3">
@@ -117,13 +143,7 @@ export const Header = () => {
                     <span className="font-bold text-sm sm:text-base tracking-tight text-slate-100 group-hover:text-white transition-colors">
                       GU CampusBridge
                     </span>
-                    <span className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20">
-                      Academic
-                    </span>
                   </div>
-                  <span className="hidden sm:block text-[10px] text-slate-400 -mt-0.5">
-                    Peer Knowledge & Discussion Network
-                  </span>
                 </div>
               </Link>
             </div>
@@ -136,22 +156,20 @@ export const Header = () => {
                 <button
                   onClick={() => setViewMode('card')}
                   title="Expanded Card View"
-                  className={`p-1.5 rounded-lg transition-all text-xs flex items-center gap-1 cursor-pointer ${
-                    viewMode === 'card'
-                      ? 'bg-slate-800/90 text-white font-medium shadow-sm border border-white/10'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`p-1.5 rounded-lg transition-all text-xs flex items-center gap-1 cursor-pointer ${viewMode === 'card'
+                    ? 'bg-slate-800/90 text-white font-medium shadow-sm border border-white/10'
+                    : 'text-slate-400 hover:text-slate-200'
+                    }`}
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setViewMode('compact')}
                   title="Compact Table View"
-                  className={`p-1.5 rounded-lg transition-all text-xs flex items-center gap-1 cursor-pointer ${
-                    viewMode === 'compact'
-                      ? 'bg-slate-800/90 text-white font-medium shadow-sm border border-white/10'
-                      : 'text-slate-400 hover:text-slate-200'
-                  }`}
+                  className={`p-1.5 rounded-lg transition-all text-xs flex items-center gap-1 cursor-pointer ${viewMode === 'compact'
+                    ? 'bg-slate-800/90 text-white font-medium shadow-sm border border-white/10'
+                    : 'text-slate-400 hover:text-slate-200'
+                    }`}
                 >
                   <ListFilter className="w-3.5 h-3.5" />
                 </button>
@@ -165,12 +183,26 @@ export const Header = () => {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="bg-transparent text-slate-300 font-medium focus:outline-none cursor-pointer text-xs"
                 >
-                  <option value="new" className="bg-slate-900">Newest Discussions</option>
-                  <option value="comments" className="bg-slate-900">Trending (Most Active)</option>
-                  <option value="unanswered" className="bg-slate-900">Awaiting Answers</option>
-                  <option value="solved" className="bg-slate-900">Verified Solved</option>
+                  <option value="new">Newest Discussions</option>
+                  <option value="comments">Trending (Most Active)</option>
+                  <option value="unanswered">Awaiting Answers</option>
+                  <option value="solved">Verified Solved</option>
                 </select>
               </div>
+
+              {/* Dark / Light Mode Toggle Button (Desktop) */}
+              <button
+                onClick={toggleTheme}
+                className="hidden md:flex items-center justify-center p-2 text-slate-300 hover:text-white bg-slate-950/70 border border-white/[0.08] rounded-xl hover:border-white/20 transition-all cursor-pointer haptic-btn"
+                title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-4 h-4 text-amber-300 hover:rotate-45 transition-transform duration-200" />
+                ) : (
+                  <Moon className="w-4 h-4 text-slate-700 hover:-rotate-12 transition-transform duration-200" />
+                )}
+              </button>
 
               {/* Create Post Button */}
               <button
@@ -180,20 +212,6 @@ export const Header = () => {
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span className="hidden sm:inline">New Post</span>
-              </button>
-
-              {/* Notifications Bell */}
-              <button
-                onClick={() => setIsNotificationsOpen(true)}
-                className="relative p-2 text-slate-300 hover:text-white bg-slate-950/70 border border-white/[0.08] rounded-xl hover:border-white/20 transition-all cursor-pointer haptic-btn"
-                title="Notifications"
-              >
-                <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 sm:w-4.5 sm:h-4.5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-slate-950 shadow-sm animate-pulse">
-                    {unreadCount}
-                  </span>
-                )}
               </button>
 
               {/* Auth State: Triple-Dot Menu for Guest OR User PFP for Logged In User */}
@@ -269,15 +287,14 @@ export const Header = () => {
                         <p className="text-xs font-semibold text-slate-200">{userState.name}</p>
                         <p className="text-[11px] text-slate-400 truncate">{userState.handle || '@campus_user'}</p>
                         <div className="mt-1.5 flex items-center gap-2 text-[10px]">
-                          <span className={`px-2 py-0.5 rounded-full font-bold border uppercase tracking-wider ${
-                            userState.role === 'ADMIN'
-                              ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
-                              : userState.role === 'FACULTY'
+                          <span className={`px-2 py-0.5 rounded-full font-bold border uppercase tracking-wider ${userState.role === 'ADMIN'
+                            ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                            : userState.role === 'FACULTY'
                               ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
                               : userState.role === 'VOLUNTEER'
-                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                              : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
-                          }`}>
+                                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
+                                : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                            }`}>
                             {userState.role || 'STUDENT'}
                           </span>
                           <span className="text-slate-400 font-mono">{userState.karma} Karma</span>
@@ -377,28 +394,99 @@ export const Header = () => {
         <>
           {/* Dark Backdrop Overlay */}
           <div
-            className="lg:hidden fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200"
+            className="md:hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200"
             onClick={() => setIsMobileMenuOpen(false)}
           />
 
           {/* Slide-In Sidebar Drawer from Left */}
-          <div className="md:hidden fixed top-0 left-0 bottom-0 w-80 max-w-[85vw] z-50 bg-slate-950 border-r border-slate-800/90 shadow-2xl p-4 overflow-y-auto animate-in slide-in-from-left duration-300">
-            {/* Drawer Close Header */}
-            <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-              <span className="font-extrabold text-base tracking-tight text-slate-100">
-                GU Campus Forum
-              </span>
-              <button
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-white rounded-xl hover:bg-slate-900 border border-slate-800 transition-colors cursor-pointer"
-                aria-label="Close menu"
-              >
-                <X className="w-5 h-5 text-slate-300" />
-              </button>
+          <div className="md:hidden fixed top-0 left-0 bottom-0 w-84 max-w-[88vw] z-50 bg-slate-950 border-r border-slate-800 shadow-2xl flex flex-col animate-in slide-in-from-left duration-300">
+            {/* Drawer Header: Title, Theme Toggle & Close Button */}
+            <div className="flex items-center justify-between p-3.5 border-b border-white/[0.08] bg-slate-950/90">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-white p-0.5 border border-white/20 flex items-center justify-center overflow-hidden shrink-0">
+                  <img src="/galgotias-logo.png" alt="GU Logo" className="w-full h-full object-contain" />
+                </div>
+                <span className="font-bold text-sm tracking-tight text-slate-100">
+                  GU CampusBridge
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {/* Mobile Dark / Light Mode Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className="p-1.5 text-slate-300 hover:text-white rounded-lg bg-slate-900 border border-white/10 transition-colors cursor-pointer"
+                  title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  aria-label="Toggle dark/light theme"
+                >
+                  {theme === 'dark' ? (
+                    <Sun className="w-4 h-4 text-amber-300" />
+                  ) : (
+                    <Moon className="w-4 h-4 text-slate-700" />
+                  )}
+                </button>
+
+                <button
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-900 border border-white/10 transition-colors cursor-pointer"
+                  aria-label="Close menu"
+                >
+                  <X className="w-5 h-5 text-slate-300" />
+                </button>
+              </div>
             </div>
 
-            {/* Sidebar Component Inside Mobile Slide-In Drawer */}
-            <SidebarContent onSelect={() => setIsMobileMenuOpen(false)} />
+            {/* 2 Switchable Tabs inside Burger Menu (Only for Mobile) */}
+            <div className="p-2.5 border-b border-white/[0.08] bg-slate-950/60">
+              <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-slate-900/90 border border-white/[0.08]">
+                <button
+                  onClick={() => setMobileTab('sidebar')}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    mobileTab === 'sidebar'
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Channels</span>
+                </button>
+
+                <button
+                  onClick={() => setMobileTab('rightpanel')}
+                  className={`py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    mobileTab === 'rightpanel'
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Flame className="w-3.5 h-3.5" />
+                  <span>Notices & Info</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Tab Content: Sidebar or Right Panel */}
+            <div className="flex-1 overflow-y-auto p-2 hover-scrollbar">
+              {mobileTab === 'sidebar' ? (
+                <SidebarContent onSelect={() => setIsMobileMenuOpen(false)} />
+              ) : (
+                <RightPanelContent onSelect={() => setIsMobileMenuOpen(false)} />
+              )}
+            </div>
+
+            {/* Mobile Drawer Footer with Theme State */}
+            <div className="p-3 border-t border-white/[0.08] bg-slate-950/80 flex items-center justify-between text-xs text-slate-400">
+              <span className="flex items-center gap-1.5 font-medium">
+                {theme === 'dark' ? <Moon className="w-3.5 h-3.5 text-rose-400" /> : <Sun className="w-3.5 h-3.5 text-amber-400" />}
+                <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+              </span>
+              <button
+                onClick={toggleTheme}
+                className="text-[11px] font-mono text-rose-400 hover:underline cursor-pointer"
+              >
+                Switch to {theme === 'dark' ? 'Light' : 'Dark'}
+              </button>
+            </div>
           </div>
         </>
       )}

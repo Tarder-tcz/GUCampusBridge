@@ -83,6 +83,32 @@ export const ForumProvider = ({ children }) => {
 
   const [token, setToken] = useState(() => localStorage.getItem('gucampusbridge_token'));
 
+  // Theme Management: 'dark' | 'light'
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('gucampusbridge_theme');
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch {}
+    return 'dark';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('gucampusbridge_theme', theme);
+    } catch {}
+    if (theme === 'light') {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
+
   const [userState, setUserState] = useState(() => {
     const savedUser = localStorage.getItem('gucampusbridge_user');
     const savedToken = localStorage.getItem('gucampusbridge_token');
@@ -535,7 +561,10 @@ export const ForumProvider = ({ children }) => {
         isCreateNoticeModalOpen,
         setIsCreateNoticeModalOpen,
         editingNotice,
-        setEditingNotice
+        setEditingNotice,
+        theme,
+        setTheme,
+        toggleTheme
       }}
     >
       {children}

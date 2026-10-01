@@ -242,12 +242,12 @@ export const MentorConnectPage = () => {
     <div className="min-h-screen flex flex-col site-gradient-bg text-slate-100 font-sans">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-5 lg:gap-6">
+      <div className="flex-1 flex w-full min-h-0">
         {/* Left Sidebar */}
         <Sidebar />
 
         {/* Center Content Area */}
-        <section className="flex-1 min-w-0 flex flex-col gap-5">
+        <main className="flex-1 min-w-0 px-3 sm:px-5 lg:px-7 py-5 flex flex-col gap-5 max-w-5xl mx-auto">
 
           {/* Navigation & Breadcrumb Header */}
           <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-white/[0.08] shadow-md flex items-center justify-between gap-4 flex-wrap">
@@ -1131,11 +1131,11 @@ export const MentorConnectPage = () => {
             </div>
           )}
 
-        </section>
+        </main>
 
         {/* Right Sidebar */}
         <RightPanel />
-      </main>
+      </div>
 
       {/* Global Modals for full feature support */}
       <CreatePostModal />

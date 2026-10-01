@@ -115,10 +115,10 @@ export const UserSettingsPage = () => {
     <div className="min-h-screen flex flex-col site-gradient-bg text-slate-100 font-sans">
       <Header />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-6 flex flex-col md:flex-row gap-5 lg:gap-6">
+      <div className="flex-1 flex w-full min-h-0">
         <Sidebar />
 
-        <section className="flex-1 min-w-0 flex flex-col gap-5">
+        <main className="flex-1 min-w-0 px-3 sm:px-5 lg:px-7 py-5 flex flex-col gap-5 max-w-4xl xl:max-w-5xl mx-auto">
 
           {/* Navigation Bar */}
           <div className="flex items-center justify-between gap-3 glass-panel p-3 rounded-2xl border border-white/[0.08] shadow-sm">
@@ -398,12 +398,12 @@ export const UserSettingsPage = () => {
                     onChange={(e) => setDepartment(e.target.value)}
                     className="w-full bg-slate-950/60 border border-white/[0.08] hover:border-white/15 focus:border-rose-500/40 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:ring-4 focus:ring-rose-500/10 cursor-pointer transition-all"
                   >
-                    <option value="School of Computer Science & Engineering" className="bg-slate-900">School of Computer Science & Engineering (SCSE)</option>
-                    <option value="School of Engineering" className="bg-slate-900">School of Engineering (SOE)</option>
-                    <option value="School of Business" className="bg-slate-900">School of Business (SOB)</option>
-                    <option value="School of Law" className="bg-slate-900">School of Law (SOL)</option>
-                    <option value="School of Medical & Allied Sciences" className="bg-slate-900">School of Medical & Allied Sciences</option>
-                    <option value="Placements & Corporate Cell" className="bg-slate-900">Placements & Corporate Cell</option>
+                    <option value="School of Computer Science & Engineering">School of Computer Science & Engineering (SCSE)</option>
+                    <option value="School of Engineering">School of Engineering (SOE)</option>
+                    <option value="School of Business">School of Business (SOB)</option>
+                    <option value="School of Law">School of Law (SOL)</option>
+                    <option value="School of Medical & Allied Sciences">School of Medical & Allied Sciences</option>
+                    <option value="Placements & Corporate Cell">Placements & Corporate Cell</option>
                   </select>
                 </div>
 
@@ -454,10 +454,10 @@ export const UserSettingsPage = () => {
 
           </div>
 
-        </section>
+        </main>
 
         <RightPanel />
-      </main>
+      </div>
 
       <CreatePostModal />
       <NotificationDrawer />
