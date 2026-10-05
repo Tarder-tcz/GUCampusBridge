@@ -307,11 +307,10 @@ export const UserPage = () => {
                 {/* Tile 1: Posts */}
                 <button
                   onClick={() => setActiveTab('posts')}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'posts'
+                  className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'posts'
                       ? 'bg-slate-800 text-slate-100 shadow-md border border-slate-700'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
+                    }`}
                 >
                   <FileText className={`w-4 h-4 ${activeTab === 'posts' ? 'text-slate-100' : 'text-slate-400'}`} />
                   <span>Posts ({stats.totalPosts})</span>
@@ -320,11 +319,10 @@ export const UserPage = () => {
                 {/* Tile 2: Comments */}
                 <button
                   onClick={() => setActiveTab('comments')}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'comments'
+                  className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'comments'
                       ? 'bg-slate-800 text-slate-100 shadow-md border border-slate-700'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
+                    }`}
                 >
                   <MessageSquare className={`w-4 h-4 ${activeTab === 'comments' ? 'text-slate-100' : 'text-slate-400'}`} />
                   <span>Comments ({stats.totalComments})</span>
@@ -333,11 +331,10 @@ export const UserPage = () => {
                 {/* Tile 3: Accepted Answers */}
                 <button
                   onClick={() => setActiveTab('answers')}
-                  className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'answers'
+                  className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'answers'
                       ? 'bg-slate-800 text-slate-100 shadow-md border border-slate-700'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
+                    }`}
                 >
                   <CheckCircle2 className={`w-4 h-4 ${activeTab === 'answers' ? 'text-emerald-400' : 'text-slate-400'}`} />
                   <span>Solutions ({stats.totalAnswers})</span>
@@ -347,11 +344,10 @@ export const UserPage = () => {
                 {hasNoticesAccess && (
                   <button
                     onClick={() => setActiveTab('announcements')}
-                    className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      activeTab === 'announcements'
+                    className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${activeTab === 'announcements'
                         ? 'bg-rose-950/40 text-rose-200 shadow-md border border-rose-500/40'
                         : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-                    }`}
+                      }`}
                   >
                     <Megaphone className={`w-4 h-4 ${activeTab === 'announcements' ? 'text-rose-400' : 'text-slate-400'}`} />
                     <span>Notices ({userNotices.length})</span>
@@ -375,32 +371,6 @@ export const UserPage = () => {
                               onEdit={() => handleEditPost(post)}
                               onDelete={() => handleDeletePost(post)}
                             />
-                            {canManageThisPost && (
-                              <div className="flex items-center justify-between px-3.5 py-2 bg-slate-900/90 rounded-xl border border-white/[0.08] text-xs shadow-sm">
-                                <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
-                                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                                  <span>Author Post Management</span>
-                                </span>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={() => handleEditPost(post)}
-                                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 transition-colors cursor-pointer text-xs font-medium haptic-btn"
-                                    title="Edit Discussion Post"
-                                  >
-                                    <Edit3 className="w-3.5 h-3.5 text-amber-300" />
-                                    <span>Edit</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeletePost(post)}
-                                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 transition-colors cursor-pointer text-xs font-medium haptic-btn"
-                                    title="Delete Discussion Post"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                                    <span>Delete</span>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
                           </div>
                         );
                       })}
@@ -525,11 +495,10 @@ export const UserPage = () => {
                           return (
                             <div
                               key={notice.id}
-                              className={`glass-panel rounded-2xl p-4 sm:p-5 border transition-all hover:border-white/20 ${
-                                isPinned
+                              className={`glass-panel rounded-2xl p-4 sm:p-5 border transition-all hover:border-white/20 ${isPinned
                                   ? 'border-rose-500/30 bg-rose-950/10 shadow-lg'
                                   : 'border-white/[0.07] bg-slate-900/50'
-                              }`}
+                                }`}
                             >
                               {/* Header Badges */}
                               <div className="flex items-center justify-between gap-2 flex-wrap text-xs">
