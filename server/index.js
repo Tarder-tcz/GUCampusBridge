@@ -267,11 +267,13 @@ function formatPost(post) {
 
   return {
     id: post.id,
+    authorId: post.authorId,
     channelId: post.channelId,
     channelName: post.channelName,
     title: post.title,
     content: post.content,
     author: {
+      id: post.authorId,
       name: post.authorName,
       handle: post.authorHandle,
       role: post.authorRole,
@@ -1215,6 +1217,113 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('Post creation endpoint error:', err);
     res.status(500).json({ error: 'Failed to create post' });
+  }
+});
+
+// PUT /api/posts/:id - Edit an existing discussion post (Author or Admin)
+app.put('/api/posts/:id', authenticateToken, requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.post.findUnique({
+      where: { id },
+      include: { comments: true }
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Discussion post not found' });
+    }
+
+    const currentUser = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const isAuthor = (existing.authorId && existing.authorId === req.user.id) ||
+      (currentUser && (
+        (existing.authorHandle && existing.authorHandle.toLowerCase() === currentUser.handle.toLowerCase()) ||
+        (existing.authorName && existing.authorName.toLowerCase() === currentUser.name.toLowerCase())
+      ));
+    const isAdminUser = req.user.role === 'ADMIN';
+
+    if (!isAuthor && !isAdminUser) {
+      return res.status(403).json({ error: 'Forbidden: You can only edit discussion posts published by your account.' });
+    }
+
+    const { title, content, channelId, tags } = req.body;
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title.trim();
+    if (content !== undefined) updateData.content = content.trim();
+    if (channelId !== undefined) {
+      updateData.channelId = channelId;
+      const channel = await prisma.channel.findUnique({ where: { id: channelId } });
+      if (channel) updateData.channelName = channel.name;
+    }
+    if (tags !== undefined) {
+      updateData.tags = JSON.stringify(Array.isArray(tags) ? tags : []);
+    }
+
+    const updated = await prisma.post.update({
+      where: { id },
+      data: updateData,
+      include: { comments: true }
+    });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'POST_UPDATED',
+      resource: `Post:${id}`,
+      metadata: { postId: id, updatedFields: Object.keys(updateData) },
+      req
+    });
+
+    res.json(formatPost(updated));
+  } catch (err) {
+    console.error('Error updating post:', err);
+    res.status(500).json({ error: 'Failed to update discussion post' });
+  }
+});
+
+// DELETE /api/posts/:id - Delete an existing discussion post (Author or Admin)
+app.delete('/api/posts/:id', authenticateToken, requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await prisma.post.findUnique({ where: { id } });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Discussion post not found' });
+    }
+
+    const currentUser = await prisma.user.findUnique({ where: { id: req.user.id } });
+    const isAuthor = (existing.authorId && existing.authorId === req.user.id) ||
+      (currentUser && (
+        (existing.authorHandle && existing.authorHandle.toLowerCase() === currentUser.handle.toLowerCase()) ||
+        (existing.authorName && existing.authorName.toLowerCase() === currentUser.name.toLowerCase())
+      ));
+    const isAdminUser = req.user.role === 'ADMIN';
+
+    if (!isAuthor && !isAdminUser) {
+      return res.status(403).json({ error: 'Forbidden: You can only delete discussion posts published by your account.' });
+    }
+
+    // Delete comments belonging to this post first to keep database clean
+    await prisma.comment.deleteMany({ where: { postId: id } });
+
+    // Delete the post
+    await prisma.post.delete({ where: { id } });
+
+    await createAuditLog({
+      userId: req.user.id,
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      action: 'POST_DELETED',
+      resource: `Post:${id}`,
+      metadata: { postId: id, title: existing.title, channelId: existing.channelId },
+      req
+    });
+
+    res.json({ success: true, message: 'Discussion post deleted successfully', postId: id });
+  } catch (err) {
+    console.error('Error deleting post:', err);
+    res.status(500).json({ error: 'Failed to delete discussion post' });
   }
 });
 

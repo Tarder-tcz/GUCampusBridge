@@ -8,6 +8,7 @@ import { PostCard } from './components/forum/PostCard';
 import { PostDetail } from './components/forum/PostDetail';
 import { PostPage } from './pages/PostPage';
 import { CreatePostModal } from './components/forum/CreatePostModal';
+import { EditPostModal } from './components/forum/EditPostModal';
 import { NotificationDrawer } from './components/notifications/NotificationDrawer';
 import { AuthModal } from './components/auth/AuthModal';
 import { MentorConnectModal } from './components/mentorship/MentorConnectModal';
@@ -203,6 +204,9 @@ export default function App() {
           </ErrorBoundary>
           <ErrorBoundary>
             <CreatePostModal />
+          </ErrorBoundary>
+          <ErrorBoundary>
+            <EditPostModal />
           </ErrorBoundary>
           <ErrorBoundary>
             <NotificationDrawer />

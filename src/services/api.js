@@ -111,6 +111,27 @@ export const api = {
     return res.json();
   },
 
+  async updatePost(postId, postData) {
+    const res = await fetch(`${API_BASE}/posts/${postId}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(postData),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update post');
+    return data;
+  },
+
+  async deletePost(postId) {
+    const res = await fetch(`${API_BASE}/posts/${postId}`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to delete post');
+    return data;
+  },
+
   async votePost(postId, direction) {
     const res = await fetch(`${API_BASE}/posts/${postId}/vote`, {
       method: 'POST',

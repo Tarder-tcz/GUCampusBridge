@@ -45,7 +45,9 @@ export const UserPage = () => {
     openEditNoticeModal,
     fetchNotices,
     canManageNotices,
-    noticesData
+    noticesData,
+    openEditPostModal,
+    deletePost
   } = useForum();
 
   const [targetUser, setTargetUser] = useState(null);
@@ -157,6 +159,39 @@ export const UserPage = () => {
       if (fetchNotices) fetchNotices();
     } catch (err) {
       alert(err.message || 'Failed to delete notice');
+    }
+  };
+
+  // Check if current logged in user can edit or delete this post
+  const canManagePost = (post) => {
+    if (!userState || userState.isGuest) return false;
+    if (isAdmin) return true;
+    return (
+      userState.id === post.authorId ||
+      userState.handle === post.author?.handle ||
+      userState.handle === post.authorHandle ||
+      userState.name === post.author?.name ||
+      userState.name === post.authorName
+    );
+  };
+
+  const handleEditPost = (post) => {
+    openEditPostModal(post, (updatedPost) => {
+      setUserPosts(prev => prev.map(p => p.id === updatedPost.id ? updatedPost : p));
+    });
+  };
+
+  const handleDeletePost = async (post) => {
+    if (!window.confirm(`Are you sure you want to permanently delete post "${post.title}"?`)) return;
+    try {
+      await deletePost(post.id);
+      setUserPosts(prev => prev.filter(p => p.id !== post.id));
+      setStats(prev => ({
+        ...prev,
+        totalPosts: Math.max(0, (prev.totalPosts || 1) - 1)
+      }));
+    } catch (err) {
+      alert(err.message || 'Failed to delete discussion post');
     }
   };
 
@@ -331,9 +366,44 @@ export const UserPage = () => {
                 {activeTab === 'posts' && (
                   userPosts.length > 0 ? (
                     <div className="flex flex-col gap-4">
-                      {userPosts.map(post => (
-                        <PostCard key={post.id} post={post} />
-                      ))}
+                      {userPosts.map(post => {
+                        const canManageThisPost = canManagePost(post);
+                        return (
+                          <div key={post.id} className="flex flex-col gap-2">
+                            <PostCard
+                              post={post}
+                              onEdit={() => handleEditPost(post)}
+                              onDelete={() => handleDeletePost(post)}
+                            />
+                            {canManageThisPost && (
+                              <div className="flex items-center justify-between px-3.5 py-2 bg-slate-900/90 rounded-xl border border-white/[0.08] text-xs shadow-sm">
+                                <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
+                                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Author Post Management</span>
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => handleEditPost(post)}
+                                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 transition-colors cursor-pointer text-xs font-medium haptic-btn"
+                                    title="Edit Discussion Post"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5 text-amber-300" />
+                                    <span>Edit</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeletePost(post)}
+                                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-500/30 transition-colors cursor-pointer text-xs font-medium haptic-btn"
+                                    title="Delete Discussion Post"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                                    <span>Delete</span>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="text-center py-12 glass-panel rounded-2xl border border-slate-800 text-slate-400 text-xs">

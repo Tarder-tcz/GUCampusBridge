@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useForum } from '../../context/ForumContext';
 import { DEFAULT_AVATAR } from '../../data/mockData';
 import { formatTimeAgo } from '../../utils/timeAgo';
@@ -8,13 +9,36 @@ import {
   Bookmark,
   CheckCircle2,
   MessageSquare,
-  Eye
+  Eye,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 
 export const PostDetail = ({ post }) => {
-  const { setSelectedPost, toggleBookmark, userState } = useForum();
+  const { setSelectedPost, toggleBookmark, userState, openEditPostModal, deletePost } = useForum();
+  const navigate = useNavigate();
 
   const isSaved = userState.savedPostIds.includes(post.id);
+
+  const canManage = userState && !userState.isGuest && (
+    userState.role === 'ADMIN' ||
+    userState.id === post.authorId ||
+    userState.handle === post.author?.handle ||
+    userState.handle === post.authorHandle ||
+    userState.name === post.author?.name ||
+    userState.name === post.authorName
+  );
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to permanently delete "${post.title}"?`)) return;
+    try {
+      await deletePost(post.id);
+      setSelectedPost(null);
+      navigate('/');
+    } catch (err) {
+      alert(err.message || 'Failed to delete discussion post');
+    }
+  };
 
   return (
     <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
@@ -47,6 +71,26 @@ export const PostDetail = ({ post }) => {
             <span className="text-xs font-mono font-semibold text-rose-300 bg-rose-500/10 px-3 py-1 rounded-xl border border-rose-500/20">
               {post.channelName}
             </span>
+
+            {canManage && (
+              <>
+                <button
+                  onClick={() => openEditPostModal(post)}
+                  className="p-2 rounded-xl border border-white/[0.08] hover:border-amber-500/30 hover:bg-amber-500/10 text-slate-400 hover:text-amber-300 transition-colors cursor-pointer haptic-btn"
+                  title="Edit Discussion Post"
+                >
+                  <Edit3 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="p-2 rounded-xl border border-white/[0.08] hover:border-rose-500/30 hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 transition-colors cursor-pointer haptic-btn"
+                  title="Delete Discussion Post"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </>
+            )}
+
             <button
               onClick={() => toggleBookmark(post.id)}
               className={`p-2 rounded-xl border transition-colors cursor-pointer haptic-btn ${isSaved

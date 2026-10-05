@@ -10,20 +10,59 @@ import {
   Pin,
   ExternalLink,
   Share2,
-  Check
+  Check,
+  Edit3,
+  Trash2
 } from 'lucide-react';
 import { formatTimeAgo } from '../../utils/timeAgo';
 
-export const PostCard = ({ post }) => {
+export const PostCard = ({ post, onEdit, onDelete }) => {
   const {
     toggleBookmark,
     userState,
-    viewMode
+    viewMode,
+    openEditPostModal,
+    deletePost
   } = useForum();
 
   const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
   const isSaved = userState.savedPostIds.includes(post.id);
+
+  const canManage = userState && !userState.isGuest && (
+    userState.role === 'ADMIN' ||
+    userState.id === post.authorId ||
+    userState.handle === post.author?.handle ||
+    userState.handle === post.authorHandle ||
+    userState.name === post.author?.name ||
+    userState.name === post.authorName
+  );
+
+  const handleEdit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onEdit) {
+      onEdit(post);
+    } else {
+      openEditPostModal(post);
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onDelete) {
+      onDelete(post);
+    } else {
+      if (window.confirm(`Are you sure you want to permanently delete "${post.title}"?`)) {
+        try {
+          await deletePost(post.id);
+        } catch (err) {
+          alert(err.message || 'Failed to delete discussion post');
+        }
+      }
+    }
+  };
 
   const copyPostUrl = (e) => {
     e.preventDefault();
@@ -74,6 +113,38 @@ export const PostCard = ({ post }) => {
             />
             <span className="text-[11px] text-slate-300">{post.author.name}</span>
           </div>
+          {canManage && (
+            <div className="flex items-center gap-1">
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={handleEdit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleEdit(e);
+                  }
+                }}
+                className="p-1 hover:text-amber-300 hover:bg-amber-500/10 rounded transition-colors cursor-pointer"
+                title="Edit Discussion Post"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+              </span>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={handleDelete}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleDelete(e);
+                  }
+                }}
+                className="p-1 hover:text-rose-400 hover:bg-rose-500/10 rounded transition-colors cursor-pointer"
+                title="Delete Discussion Post"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </span>
+            </div>
+          )}
           <span
             role="button"
             tabIndex={0}
@@ -151,6 +222,39 @@ export const PostCard = ({ post }) => {
         </div>
 
         <div className="flex items-center gap-1">
+          {canManage && (
+            <>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={handleEdit}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleEdit(e);
+                  }
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-amber-500/10 transition-colors haptic-btn cursor-pointer"
+                title="Edit Discussion Post"
+              >
+                <Edit3 className="w-4 h-4" />
+              </span>
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={handleDelete}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    handleDelete(e);
+                  }
+                }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors haptic-btn cursor-pointer"
+                title="Delete Discussion Post"
+              >
+                <Trash2 className="w-4 h-4" />
+              </span>
+            </>
+          )}
+
           <span
             role="button"
             tabIndex={0}

@@ -21,6 +21,16 @@ export const ForumProvider = ({ children }) => {
   const [viewMode, setViewMode] = useState('card'); // 'card' | 'compact'
   const [selectedPost, setSelectedPost] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [onPostUpdatedCallback, setOnPostUpdatedCallback] = useState(null);
+
+  const openEditPostModal = (post, callback = null) => {
+    setEditingPost(post);
+    setOnPostUpdatedCallback(() => callback);
+    setIsEditModalOpen(true);
+  };
+
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const [isMentorModalOpen, setIsMentorModalOpen] = useState(false);
@@ -268,6 +278,38 @@ export const ForumProvider = ({ children }) => {
     }
   };
 
+  // Update Post with API sync
+  const updatePost = async (postId, postData) => {
+    try {
+      const updated = await api.updatePost(postId, postData);
+      if (updated) {
+        setPosts(prev => prev.map(p => p.id === postId ? updated : p));
+        if (selectedPost && selectedPost.id === postId) {
+          setSelectedPost(updated);
+        }
+        return updated;
+      }
+    } catch (err) {
+      console.error('Update post error:', err);
+      throw err;
+    }
+  };
+
+  // Delete Post with API sync
+  const deletePost = async (postId) => {
+    try {
+      await api.deletePost(postId);
+      setPosts(prev => prev.filter(p => p.id !== postId));
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost(null);
+      }
+      return true;
+    } catch (err) {
+      console.error('Delete post error:', err);
+      throw err;
+    }
+  };
+
   // Recursive Add Comment to Thread with API sync
   const addCommentToPost = async (postId, parentCommentId, commentText) => {
     const createCommentObj = () => ({
@@ -511,6 +553,13 @@ export const ForumProvider = ({ children }) => {
         setSelectedPost,
         isCreateModalOpen,
         setIsCreateModalOpen,
+        editingPost,
+        setEditingPost,
+        isEditModalOpen,
+        setIsEditModalOpen,
+        openEditPostModal,
+        onPostUpdatedCallback,
+        setOnPostUpdatedCallback,
         isNotificationsOpen,
         setIsNotificationsOpen,
         isMentorModalOpen,
@@ -545,6 +594,8 @@ export const ForumProvider = ({ children }) => {
         togglePostVote,
         toggleBookmark,
         addPost,
+        updatePost,
+        deletePost,
         addCommentToPost,
         deleteComment,
         toggleMarkSolution,
